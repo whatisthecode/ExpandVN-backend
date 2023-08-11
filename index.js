@@ -1,11 +1,15 @@
 const express = require('express')
 const request = require("request");
+const cors = require('cors')
 
 const endpoint = "https://graph.zalo.me/v2.0/me/info";
 
 const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
 
 const app = express()
+
+app.use(cors());
+
 app.get('/user-phone', (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
     const token = req.headers["X-Token"] || req.headers["x-token"];
