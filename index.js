@@ -39,7 +39,8 @@ app.all('/user-phone', (req, res) => {
             // console.error("Error:", error);
             return res.status(200).json({
                 code: error.code,
-                message: error.message
+                message: error.message,
+                input: options
             })
         } else {
             // console.log("Response Code:", response.statusCode);
