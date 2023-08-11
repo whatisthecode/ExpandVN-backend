@@ -20,7 +20,7 @@ app.all('/user-phone', (req, res) => {
         message: "Missing user access token"
     });
 
-    if(!token) return res.tatus(200).json({
+    if(!token) return res.status(200).json({
         code: 401,
         message: "Missing token"
     });
