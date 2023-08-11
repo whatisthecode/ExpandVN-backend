@@ -45,11 +45,21 @@ app.all('/user-phone', (req, res) => {
         } else {
             // console.log("Response Code:", response.statusCode);
             // console.log("Response Body:", body);
-            return res.status(200).json({
-                code: response.statusCode,
-                data: body,
-                input: options
-            });
+            try {
+                const data = JSON.parse(body);
+                return res.status(200).json({
+                    code: !data.error ? response.statusCode : data.error,
+                    data: !data.error ? data.data : undefined,
+                    message: data.error ? data.message : undefined
+                });
+            }
+            catch(e){
+                const data = JSON.parse(body);
+                return res.status(500).json({
+                    code: 500,
+                    messge: e.messge
+                });
+            }
         }
     });
 })
