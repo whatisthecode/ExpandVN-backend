@@ -137,7 +137,8 @@ app.get('/user-location', (req, res) => {
                             return res.status(200).json({
                                 code: !dataa.error ? responsee.statusCode : dataa.error,
                                 data: !dataa.error ? dataaa : undefined,
-                                message: dataa.error ? dataa.message : undefined
+                                message: dataa.error ? dataa.message : undefined,
+                                input: data.data
                             });
                         }
                     });
