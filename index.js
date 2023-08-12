@@ -108,11 +108,48 @@ app.get('/user-location', (req, res) => {
             // console.log("Response Body:", body);
             try {
                 const data = JSON.parse(body);
-                return res.status(200).json({
-                    code: !data.error ? response.statusCode : data.error,
-                    data: !data.error ? data.data : undefined,
-                    message: data.error ? data.message : undefined
-                });
+
+                if(!data.error) {
+                    const {lat, lng} = data.data;
+                    const optionss = {
+                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyDr3fhrxYjKoUWG1de5OCeWV66as9t3-r8`
+                    }
+                    request(options, (errorr, responsee, bodyy) => {
+                        if (errorr) {
+                            // console.error("Error:", error);
+                            return res.status(200).json({
+                                code: errorr.code,
+                                message: errorr.message,
+                                input: optionss
+                            })
+                        }
+                        else {
+                            const dataa = JSON.parse(bodyy);
+
+                            const results = dataa.error ? [] : (dataa.results || []);
+                            
+                            const dataaa = results.map(r => {
+                                if(r.types.includes("street_address")) return {
+                                    location: r.formatted_address
+                                };
+                            }) || undefined;
+
+                            return res.status(200).json({
+                                code: !dataa.error ? responsee.statusCode : dataa.error,
+                                data: !dataa.error ? dataaa : undefined,
+                                message: dataa.error ? dataa.message : undefined
+                            });
+                        }
+                    });
+                }
+
+                else {
+                    return res.status(200).json({
+                        code: !data.error ? response.statusCode : data.error,
+                        data: !data.error ? data.data : undefined,
+                        message: data.error ? data.message : undefined
+                    });
+                }
             }
             catch(e){
                 const data = JSON.parse(body);
