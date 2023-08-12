@@ -112,7 +112,7 @@ app.get('/user-location', (req, res) => {
                 if(!data.error) {
                     const {latitude, longitude} = data.data;
                     const optionss = {
-                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyDr3fhrxYjKoUWG1de5OCeWV66as9t3-r8`
+                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDr3fhrxYjKoUWG1de5OCeWV66as9t3-r8`
                     }
                     request(optionss, (errorr, responsee, bodyy) => {
                         if (errorr) {
