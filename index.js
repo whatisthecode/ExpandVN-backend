@@ -128,15 +128,25 @@ app.get('/user-location', (req, res) => {
 
                             const results = dataa.error ? [] : (dataa.results || []);
                             
-                            const dataaa = results.map(r => {
-                                if(r.types.includes("street_address")) return {
-                                    location: r.formatted_address
-                                };
+                            const location = {
+                                premise: "",
+                                street_address: ""
+                            }
+
+                            results.map(r => {
+                                if(r.types[0] === "street_address" && !location.street_address) {
+                                    location.street_address = r.formatted_address;
+                                }
+                                else if(r.types[0] === "premise" && !location.premise) {
+                                    location.premise = r.formatted_address;
+                                }
                             }) || undefined;
 
                             return res.status(200).json({
                                 code: !dataa.error ? responsee.statusCode : dataa.error,
-                                data: !dataa.error ? dataaa : undefined,
+                                data: !dataa.error ? {
+                                    location: location.premise || location.street_address
+                                } : undefined,
                                 message: dataa.error ? dataa.message : undefined,
                                 input: data.data
                             });
