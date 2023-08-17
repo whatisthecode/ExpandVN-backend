@@ -5,6 +5,7 @@ const cors = require('cors')
 const { createHash, randomBytes } = require("crypto");
 const base64url = require("base64url")
 
+const https = require("https");
 
 const endpoint = "https://graph.zalo.me/v2.0/me/info";
 
@@ -240,84 +241,81 @@ app.post("/send-order-notification", (req, res) => {
 
     const endpoint = "https://openapi.zalo.me/v3.0/oa/message/transaction";
 
-    request.post(endpoint, {
-        "headers": {
+
+    const reqt = https.request({
+        method: "POST",
+        host: "openapi.zalo.me",
+        path: "/v3.0/oa/message/transaction",
+        headers: {
             "access_token": zaloOAAcessToken,
             "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            "recipient": req.body.recipient,
-            "message": {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "transaction_order",
-                        "language": "VI",
-                        "elements": [
-                            {
-                                "type": "header",
-                                "content": "Xác nhận đơn hàng",
-                                "align": "left"
-                            },
-                            {
-                                "type": "text",
-                                "align": "left",
-                                "content": "• Cảm ơn bạn đã mua hàng tại cửa hàng.<br>• Thông tin đơn hàng của bạn như sau:"
-                            },
-                            {
-                                "type": "table",
-                                "content": [
-                                    {
-                                        "value": "F-01332973223",
-                                        "key":"Mã khách hàng"
-                                    },
-                                    {
-                                        "style": "yellow",
-                                        "value": "Đang giao",
-                                        "key": "Trạng thái"
-                                    },
-                                    {
-                                        "value": "250,000đ",
-                                        "key": "Giá tiền"
-                                    }
-                                ]
-                            },
-                            {
-                                "type": "text",
-                                "align": "center",
-                                "content": "📱Lưu ý điện thoại. Xin cảm ơn!"
-                            }
-                        ],
-                        "buttons": [
-                            {
-                                "title": "Liên hệ tổng đài",
-                                "image_icon": "gNf2KPUOTG-ZSqLJaPTl6QTcKqIIXtaEfNP5Kv2NRncWPbDJpC4XIxie20pTYMq5gYv60DsQRHYn9XyVcuzu4_5o21NQbZbCxd087DcJFq7bTmeUq9qwGVie2ahEpZuLg2KDJfJ0Q12c85jAczqtKcSYVGJJ1cZMYtKR",
-                                "type": "oa.open.phone",
-                                "payload": {
-                                    "phone_code":"84123456789"
+        }
+    }, (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+            data += chunk.toString();
+        }).once("end", () => {
+            res.status(200).send(data);
+        });
+    });
+
+    reqt.end(JSON.stringify({
+        "recipient": req.body.recipient,
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "transaction_order",
+                    "language": "VI",
+                    "elements": [
+                        {
+                            "type": "header",
+                            "content": "Xác nhận đơn hàng",
+                            "align": "left"
+                        },
+                        {
+                            "type": "text",
+                            "align": "left",
+                            "content": "• Cảm ơn bạn đã mua hàng tại cửa hàng.<br>• Thông tin đơn hàng của bạn như sau:"
+                        },
+                        {
+                            "type": "table",
+                            "content": [
+                                {
+                                    "value": "F-01332973223",
+                                    "key":"Mã khách hàng"
+                                },
+                                {
+                                    "style": "yellow",
+                                    "value": "Đang giao",
+                                    "key": "Trạng thái"
+                                },
+                                {
+                                    "value": "250,000đ",
+                                    "key": "Giá tiền"
                                 }
+                            ]
+                        },
+                        {
+                            "type": "text",
+                            "align": "center",
+                            "content": "📱Lưu ý điện thoại. Xin cảm ơn!"
+                        }
+                    ],
+                    "buttons": [
+                        {
+                            "title": "Liên hệ tổng đài",
+                            "image_icon": "gNf2KPUOTG-ZSqLJaPTl6QTcKqIIXtaEfNP5Kv2NRncWPbDJpC4XIxie20pTYMq5gYv60DsQRHYn9XyVcuzu4_5o21NQbZbCxd087DcJFq7bTmeUq9qwGVie2ahEpZuLg2KDJfJ0Q12c85jAczqtKcSYVGJJ1cZMYtKR",
+                            "type": "oa.open.phone",
+                            "payload": {
+                                "phone_code":"84123456789"
                             }
-                        ]
-                    }
+                        }
+                    ]
                 }
             }
-        })
-    }, (error, response, body) => {
-        if(error) {
-            return res.status(400).json({
-                code: error.code,
-                message: error.message
-            })
-        } 
-        else {
-            if(response.statusCode === 200) {
-                return res.status(200).send(body);
-            }
-            else {
-                return res.status(400).send(body);
-            }
         }
-    });
+    }));
 });
 
 app.listen(process.env.PORT || 3000)
