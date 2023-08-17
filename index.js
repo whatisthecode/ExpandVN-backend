@@ -5,6 +5,7 @@ const cors = require('cors')
 const { createHash, randomBytes } = require("crypto");
 const base64url = require("base64url")
 
+
 const endpoint = "https://graph.zalo.me/v2.0/me/info";
 
 const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
@@ -244,8 +245,7 @@ app.post("/send-order-notification", (req, res) => {
             "access_token": zaloOAAcessToken,
             "Content-Type": "application/json"
         },
-        json: true,
-        body: {
+        json: {
             "recipient": req.body.recipient,
             "message": {
                 "attachment": {
