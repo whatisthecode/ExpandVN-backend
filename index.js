@@ -259,8 +259,10 @@ app.post("/send-order-notification", (req, res) => {
         });
     });
 
-    reqt.end(JSON.stringify({
-        "recipient": req.body.recipient,
+    reqt.write(JSON.stringify({
+        "recipient": {
+            "user_id": req.body.recipient
+        },
         "message": {
             "attachment": {
                 "type": "template",
@@ -316,6 +318,8 @@ app.post("/send-order-notification", (req, res) => {
             }
         }
     }));
+
+    reqt.end();
 });
 
 app.listen(process.env.PORT || 3000)
