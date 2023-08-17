@@ -197,7 +197,7 @@ app.get("/generate-challenge-code", (req, res) => {
             verifierCode += String.fromCharCode(code);
         }
     }
-    verifierCode = base64url(Buffer.from(verifierCode, "hex").toString());
+    verifierCode = base64url(verifierCode);
     const challengeCode = base64url(Buffer.from(createHash("sha256").update(verifierCode).digest("hex")).toString());
 
     res.status(200).json({
