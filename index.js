@@ -2,12 +2,12 @@ const express = require('express')
 const request = require("request");
 const bodyParser = require("body-parser");
 const cors = require('cors')
-const { createHash } = require("crypto");
+const { createHash, randomBytes } = require("crypto");
 const base64url = require("base64url")
 
 const endpoint = "https://graph.zalo.me/v2.0/me/info";
 
-const secretKey = process.env.ZALO_APP_SECRET_KEY || ""
+const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
 
 const app = express();
 
@@ -178,27 +178,12 @@ app.get('/user-location', (req, res) => {
 })
 
 app.get("/generate-challenge-code", (req, res) => {
-    const length = 64;
-    let verifierCode = "";
-    const sets = [];
-    for(let i = 0; i < length; i++) {
-        const set = Math.floor(Math.random() * 3) + 1;
-        sets.push(set);
-        if(set === 1) {
-            const code = Math.floor(Math.random() * 25) + 65;
-            verifierCode += String.fromCharCode(code);
-        }
-        else if(set === 2){
-            const code = Math.floor(Math.random() * 25) + 97;
-            verifierCode += String.fromCharCode(code);
-        }
-        else {
-            const code = Math.floor(Math.random() * 10) + 48;
-            verifierCode += String.fromCharCode(code);
-        }
-    }
-    verifierCode = base64url(verifierCode);
-    const challengeCode = base64url(Buffer.from(createHash("sha256").update(verifierCode).digest("hex")).toString());
+    const randomHex = Buffer.from(randomBytes(32), "hex");
+    const random = randomHex.toString("base64");
+    const verifierCode = base64url(random);
+    // const challengeCode = base64url(Buffer.from(createHash("sha256").update(verifierCode).digest("hex")).toString());
+    const _challengeCode = createHash("sha256").update(verifierCode).digest("base64");
+    const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 
     res.status(200).json({
         verifierCode,
@@ -209,6 +194,129 @@ app.get("/generate-challenge-code", (req, res) => {
 app.get("/verify-app", (req, res) => {
     const query = req.query;
 
-    res.status(200).json(query);
-})
+    if(!query.code) return res.status(400).json({"message": "Missing authorization code"});
+    if(!query.oa_ia) return res.status(400).json({"message": "Missing zalo app id"});
+
+
+    const queries = {
+        "code":  query.code,
+        "app_id" : query.oa_id,
+        "grant_type": "authorization_code",
+        "code_verifier" : "eWZqNlUvbFZwTUhhL25qM2ZFaGxSaXFhajFqZDJOWDJMS1diaFhvV2YrWT0",
+    }
+
+    const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
+    const options = {
+        url: endpoint,
+        headers: {
+            secret_key: secretKey
+        },
+        form: queries
+    };
+
+    request.post(options, (error, response, body) => {
+        if (error) {
+            console.log(error);
+            res.status(400).json({
+                message: error.message
+            });
+        }
+        else {
+            if(response.statusCode === 200) res.status(200).json(JSON.parse(body));
+            else res.status(400).json(JSON.parse(body));
+        }
+    });
+});
+
+app.post("/send-order-notification", (req, res) => {
+    if(!req.body.recipient) return res.status(200).json({
+        code: 400,
+        message: "Missing recipient"
+    });
+
+    const zaloOAAcessToken = process.env.ZALO_OA_ACCESS_TOKEN;
+    const zaloOARefreshToken = process.env.ZALO_OA_REFRESH_TOKEN;
+
+    const endpoint = "https://openapi.zalo.me/v3.0/oa/message/transaction";
+
+    request.post(endpoint, {
+        "headers": {
+            "access_token": zaloOAAcessToken,
+        },
+        json: true,
+        body: {
+            "recipient": req.body.recipient,
+            "message": {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                        "template_type": "transaction_order",
+                        "language": "VI",
+                        "elements": [
+                            {
+                                "type": "header",
+                                "content": "Xác nhận đơn hàng",
+                                "align": "left"
+                            },
+                            {
+                                "type": "text",
+                                "align": "left",
+                                "content": "• Cảm ơn bạn đã mua hàng tại cửa hàng.<br>• Thông tin đơn hàng của bạn như sau:"
+                            },
+                            {
+                                "type": "table",
+                                "content": [
+                                    {
+                                        "value": "F-01332973223",
+                                        "key":"Mã khách hàng"
+                                    },
+                                    {
+                                        "style": "yellow",
+                                        "value": "Đang giao",
+                                        "key": "Trạng thái"
+                                    },
+                                    {
+                                        "value": "250,000đ",
+                                        "key": "Giá tiền"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "text",
+                                "align": "center",
+                                "content": "📱Lưu ý điện thoại. Xin cảm ơn!"
+                            }
+                        ],
+                        "buttons": [
+                            {
+                                "title": "Liên hệ tổng đài",
+                                "image_icon": "gNf2KPUOTG-ZSqLJaPTl6QTcKqIIXtaEfNP5Kv2NRncWPbDJpC4XIxie20pTYMq5gYv60DsQRHYn9XyVcuzu4_5o21NQbZbCxd087DcJFq7bTmeUq9qwGVie2ahEpZuLg2KDJfJ0Q12c85jAczqtKcSYVGJJ1cZMYtKR",
+                                "type": "oa.open.phone",
+                                "payload": {
+                                    "phone_code":"84123456789"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }, (error, response, body) => {
+        if(error) {
+            return res.status(400).json({
+                code: error.code,
+                message: error.message
+            })
+        } 
+        else {
+            if(response.statusCode === 200) {
+                return res.status(200).json(JSON.parse(body));
+            }
+            else {
+                return res.status(400).json(JSON.parse(body));
+            }
+        }
+    });
+});
+
 app.listen(process.env.PORT || 3000)
