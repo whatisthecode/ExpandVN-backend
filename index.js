@@ -250,9 +250,9 @@ app.post("/send-order-notification", (req, res) => {
             "access_token": zaloOAAcessToken,
             "Content-Type": "application/json"
         }
-    }, (res) => {
+    }, (response) => {
         let data = "";
-        res.on("data", (chunk) => {
+        response.on("data", (chunk) => {
             data += chunk.toString();
         }).once("end", () => {
             res.status(200).send(data);
