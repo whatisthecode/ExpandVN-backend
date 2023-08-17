@@ -178,7 +178,7 @@ app.get('/user-location', (req, res) => {
 })
 
 app.get("/generate-challenge-code", (req, res) => {
-    const length = 43;
+    const length = 64;
     let verifierCode = "";
     const sets = [];
     for(let i = 0; i < length; i++) {
@@ -197,8 +197,8 @@ app.get("/generate-challenge-code", (req, res) => {
             verifierCode += String.fromCharCode(code);
         }
     }
-
-    const challengeCode = base64url(Buffer.from(createHash('sha256').update(verifierCode).digest("hex")).toString());
+    verifierCode = base64url(Buffer.from(verifierCode, "hex").toString());
+    const challengeCode = base64url(Buffer.from(createHash("sha256").update(verifierCode).digest("hex")).toString());
 
     res.status(200).json({
         verifierCode,
