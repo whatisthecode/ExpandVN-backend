@@ -245,7 +245,7 @@ app.post("/send-order-notification", (req, res) => {
             "access_token": zaloOAAcessToken,
             "Content-Type": "application/json"
         },
-        json: {
+        body: JSON.stringify({
             "recipient": req.body.recipient,
             "message": {
                 "attachment": {
@@ -301,7 +301,7 @@ app.post("/send-order-notification", (req, res) => {
                     }
                 }
             }
-        }
+        })
     }, (error, response, body) => {
         if(error) {
             return res.status(400).json({
