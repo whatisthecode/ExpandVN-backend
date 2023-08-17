@@ -242,6 +242,7 @@ app.post("/send-order-notification", (req, res) => {
     request.post(endpoint, {
         "headers": {
             "access_token": zaloOAAcessToken,
+            "Content-Type": "application/json"
         },
         json: true,
         body: {
@@ -310,10 +311,10 @@ app.post("/send-order-notification", (req, res) => {
         } 
         else {
             if(response.statusCode === 200) {
-                return res.status(200).json(JSON.parse(body));
+                return res.status(200).send(body);
             }
             else {
-                return res.status(400).json(JSON.parse(body));
+                return res.status(400).send(body);
             }
         }
     });
