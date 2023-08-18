@@ -214,25 +214,25 @@ app.get("/verify-app", async (req, res) => {
     // if(!query.oa_ia) return res.status(400).json({"message": "Missing zalo app id"});
 
 
-    const codePath = path.join(__dirname, "code.json");
-    const isExists = await fileExists(codePath);
-    if(!isExists) return res.status(500).json({
-        code: 500,
-        message: "Missing code"
-    });
+    // const codePath = path.join(__dirname, "code.json");
+    // const isExists = await fileExists(codePath);
+    // if(!isExists) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing code"
+    // });
 
-    const code = require(codePath);
+    // const code = require(codePath);
 
-    if(!code.verifierCode) return res.status(500).json({
-        code: 500,
-        message: "Missing verifier code"
-    });
+    // if(!code.verifierCode) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing verifier code"
+    // });
 
     const queries = {
         "code":  query.code,
         "app_id" : appId,
         "grant_type": "authorization_code",
-        "code_verifier" : code.verifierCode,
+        "code_verifier" : process.env.VERIFIER_CODE,
     }
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
@@ -264,18 +264,18 @@ app.post("/send-order-notification", async (req, res) => {
         message: "Missing recipient"
     });
 
-    const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    const isExists = await fileExists(credentialPath);
-    if(!isExists) return res.status(500).json({
-        code: 500,
-        message: "Missing zalo credential. Please set up first"
-    });
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
+    // if(!isExists) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing zalo credential. Please set up first"
+    // });
 
-    const zaloCredentials = require(credentialPath) || {};
-    if(!zaloCredentials.accessToken) return res.status(500).json({
-        code: 500,
-        message: "Missing zalo oa access token. Please set up first"
-    });
+    // const zaloCredentials = require(credentialPath) || {};
+    // if(!zaloCredentials.accessToken) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing zalo oa access token. Please set up first"
+    // });
 
 
     const reqt = https.request({
@@ -283,7 +283,7 @@ app.post("/send-order-notification", async (req, res) => {
         host: "openapi.zalo.me",
         path: "/v3.0/oa/message/transaction",
         headers: {
-            "access_token": zaloCredentials.accessToken,
+            "access_token": process.env.ZALO_OA_ACCESS_TOKEN,
             "Content-Type": "application/json"
         }
     }, (response) => {
