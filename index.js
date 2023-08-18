@@ -264,6 +264,11 @@ app.post("/send-order-notification", async (req, res) => {
         message: "Missing recipient"
     });
 
+    if(!req.body.content) return res.status(200).json({
+        code: 400,
+        message: "Missing content"
+    });
+
     // const credentialPath = path.join(__dirname, "zalo-credentials.json");
     // const isExists = await fileExists(credentialPath);
     // if(!isExists) return res.status(500).json({
@@ -314,25 +319,11 @@ app.post("/send-order-notification", async (req, res) => {
                         {
                             "type": "text",
                             "align": "left",
-                            "content": "• Cảm ơn bạn đã mua hàng tại cửa hàng.<br>• Thông tin đơn hàng của bạn như sau:"
+                            "content": "• Cảm ơn bạn đã mua hàng.<br>• Thông tin đơn hàng của bạn như sau:"
                         },
                         {
                             "type": "table",
-                            "content": [
-                                {
-                                    "value": "F-01332973223",
-                                    "key":"Mã khách hàng"
-                                },
-                                {
-                                    "style": "yellow",
-                                    "value": "Đang giao",
-                                    "key": "Trạng thái"
-                                },
-                                {
-                                    "value": "250,000đ",
-                                    "key": "Giá tiền"
-                                }
-                            ]
+                            "content": req.body.content
                         },
                         {
                             "type": "text",
@@ -340,16 +331,16 @@ app.post("/send-order-notification", async (req, res) => {
                             "content": "📱Lưu ý điện thoại. Xin cảm ơn!"
                         }
                     ],
-                    "buttons": [
-                        {
-                            "title": "Liên hệ tổng đài",
-                            "image_icon": "gNf2KPUOTG-ZSqLJaPTl6QTcKqIIXtaEfNP5Kv2NRncWPbDJpC4XIxie20pTYMq5gYv60DsQRHYn9XyVcuzu4_5o21NQbZbCxd087DcJFq7bTmeUq9qwGVie2ahEpZuLg2KDJfJ0Q12c85jAczqtKcSYVGJJ1cZMYtKR",
-                            "type": "oa.open.phone",
-                            "payload": {
-                                "phone_code":"84123456789"
-                            }
-                        }
-                    ]
+                    // "buttons": [
+                    //     {
+                    //         "title": "Liên hệ tổng đài",
+                    //         "image_icon": "gNf2KPUOTG-ZSqLJaPTl6QTcKqIIXtaEfNP5Kv2NRncWPbDJpC4XIxie20pTYMq5gYv60DsQRHYn9XyVcuzu4_5o21NQbZbCxd087DcJFq7bTmeUq9qwGVie2ahEpZuLg2KDJfJ0Q12c85jAczqtKcSYVGJJ1cZMYtKR",
+                    //         "type": "oa.open.phone",
+                    //         "payload": {
+                    //             "phone_code":"84123456789"
+                    //         }
+                    //     }
+                    // ]
                 }
             }
         }
