@@ -190,16 +190,16 @@ app.get("/generate-challenge-code", async (req, res) => {
     const _challengeCode = createHash("sha256").update(verifierCode).digest("base64");
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 
-    const codePath = path.join(__dirname, "code.json");
-    const isExists = await fileExists(codePath);
-    if(!isExists) fs.writeFileSync(codePath, "{}");
+    // const codePath = path.join(__dirname, "code.json");
+    // const isExists = await fileExists(codePath);
+    // if(!isExists) fs.writeFileSync(codePath, "{}");
 
-    const code = require(codePath) || {};
+    // const code = require(codePath) || {};
 
-    code.verifierCode = verifierCode;
-    code.challengeCode = challengeCode;
+    // code.verifierCode = verifierCode;
+    // code.challengeCode = challengeCode;
 
-    fs.writeFileSync(codePath, JSON.stringify(code, null, 4));
+    // fs.writeFileSync(codePath, JSON.stringify(code, null, 4));
 
     res.status(200).json({
         verifierCode,
@@ -375,14 +375,14 @@ app.post("/set-app-id", async(req, res) => {
         message: "Missing zalo app id"
     }); 
 
-    const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    const isExists = await fileExists(credentialPath);
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
 
-    if(!isExists) fs.writeFileSync(credentialPath, "{}");
+    // if(!isExists) fs.writeFileSync(credentialPath, "{}");
 
-    const zaloCredentials = require(credentialPath) || {};
+    // const zaloCredentials = require(credentialPath) || {};
 
-    zaloCredentials.appId = body.appId;
+    // zaloCredentials.appId = body.appId;
 
     res.status(200).send("OK");
 })
@@ -399,65 +399,65 @@ app.post("/set-zalo-oa-access-token", async (req, res) => {
         message: "Missing zalo oa refresh token"
     });
 
-    const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    const isExists = await fileExists(credentialPath);
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
 
-    if(!isExists) fs.writeFileSync(credentialPath, "{}");
+    // if(!isExists) fs.writeFileSync(credentialPath, "{}");
 
-    const zaloCredentials = require(credentialPath) || {};
+    // const zaloCredentials = require(credentialPath) || {};
 
-    zaloCredentials.accessToken = body.accessToken;
-    zaloCredentials.refreshToken = body.refreshToken;
+    // zaloCredentials.accessToken = body.accessToken;
+    // zaloCredentials.refreshToken = body.refreshToken;
     
-    fs.wrteiFileSync(credentialPath, JSON.stringify(zaloCredentials, null, 4));
+    // fs.writeFileSync(credentialPath, JSON.stringify(zaloCredentials, null, 4));
 
     res.status(200).send("OK");
 })
 
 app.get("/app-info", async (req, res) => {
 
-    const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    const isExists = await fileExists(credentialPath);
-    if(!isExists) return res.status(500).json({
-        code: 500,
-        message: "Missing zalo credential. Please set up first"
-    });
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
+    // if(!isExists) return res.status(500).json({
+        // code: 500,
+        // message: "Missing zalo credential. Please set up first"
+    // });
 
-    const zaloCredentials = require(credentialPath) || {};
-    if(!zaloCredentials.accessToken) return res.status(500).json({
-        code: 500,
-        message: "Missing zalo oa access token. Please set up first"
-    });
+    // const zaloCredentials = require(credentialPath) || {};
+    // if(!zaloCredentials.accessToken) return res.status(500).json({
+        // code: 500,
+        // message: "Missing zalo oa access token. Please set up first"
+    // });
 
     res.status(200).json({
-        accessToken: zaloCredentials.accessToken,
-        appId: zaloCredentials.appId || appId
+        accessToken: process.env.ZALO_OA_ACCESS_TOKEN,
+        appId: appId
     });
 });
 
 async function refreshZaloOAToken() {
-    const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    const isExists = await fileExists(credentialPath);
-    if(!isExists) return Promise.reject({
-        code: 500,
-        message: "Missing zalo credential. Please set up first"
-    });
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
+    // if(!isExists) return Promise.reject({
+        // code: 500,
+        // message: "Missing zalo credential. Please set up first"
+    // });
 
-    const zaloCredentials = require(credentialPath) || {};
-    if(!zaloCredentials.accessToken) return Promise.reject({
-        code: 500,
-        message: "Missing zalo oa access token. Please set up first"
-    });
+    // const zaloCredentials = require(credentialPath) || {};
+    // if(!zaloCredentials.accessToken) return Promise.reject({
+        // code: 500,
+        // message: "Missing zalo oa access token. Please set up first"
+    // });
 
     // if(!zaloCredentials.appId) return Promise.reject({
     //     code: 500,
     //     message: "Missing zalo app id. Please set up first"
     // });
 
-    if(!zaloCredentials.refreshToken) return Promise.reject({
-        code: 500,
-        message: "Missing zalo oa refresh token. Please set up first"
-    });
+    // if(!zaloCredentials.refreshToken) return Promise.reject({
+    //     code: 500,
+    //     message: "Missing zalo oa refresh token. Please set up first"
+    // });
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
     return new Promise((resolve, reject) => {
@@ -467,7 +467,7 @@ async function refreshZaloOAToken() {
                 secret_key: secretKey,
             },
             form: {
-                refresh_token: zaloCredentials.refreshToken,
+                refresh_token: process.env.ZALO_OA_REFRESH_TOKEN,
                 app_id: appId,
                 grant_type: "refresh_token"
             }
