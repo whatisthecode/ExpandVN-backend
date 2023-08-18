@@ -192,14 +192,14 @@ app.get("/generate-challenge-code", async (req, res) => {
 
     const codePath = path.join(__dirname, "code.json");
     const isExists = await fileExists(codePath);
-    if(!isExists) fs.createFileSync(codePath, "{}");
+    if(!isExists) fs.writeFileSync(codePath, "{}");
 
     const code = require(codePath) || {};
 
     code.verifierCode = verifierCode;
     code.challengeCode = challengeCode;
 
-    fs.wrteiFileSync(codePath, JSON.stringify(code, null, 4));
+    fs.writeFileSync(codePath, JSON.stringify(code, null, 4));
 
     res.status(200).json({
         verifierCode,
@@ -378,7 +378,7 @@ app.post("/set-app-id", async(req, res) => {
     const credentialPath = path.join(__dirname, "zalo-credentials.json");
     const isExists = await fileExists(credentialPath);
 
-    if(!isExists) fs.createFileSync(credentialPath, "{}");
+    if(!isExists) fs.writeFileSync(credentialPath, "{}");
 
     const zaloCredentials = require(credentialPath) || {};
 
@@ -402,7 +402,7 @@ app.post("/set-zalo-oa-access-token", async (req, res) => {
     const credentialPath = path.join(__dirname, "zalo-credentials.json");
     const isExists = await fileExists(credentialPath);
 
-    if(!isExists) fs.createFileSync(credentialPath, "{}");
+    if(!isExists) fs.writeFileSync(credentialPath, "{}");
 
     const zaloCredentials = require(credentialPath) || {};
 
