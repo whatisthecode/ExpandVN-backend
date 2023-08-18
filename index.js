@@ -3,13 +3,16 @@ const request = require("request");
 const bodyParser = require("body-parser");
 const cors = require('cors')
 const { createHash, randomBytes } = require("crypto");
-const base64url = require("base64url")
+const base64url = require("base64url");
+const path = require("path");
+const fs = require("fs");
 
 const https = require("https");
 
 const endpoint = "https://graph.zalo.me/v2.0/me/info";
 
 const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
+const appId = process.env.ZALO_APP_ID || "";
 
 const app = express();
 
@@ -179,7 +182,7 @@ app.get('/user-location', (req, res) => {
     });
 })
 
-app.get("/generate-challenge-code", (req, res) => {
+app.get("/generate-challenge-code", async (req, res) => {
     const randomHex = Buffer.from(randomBytes(32), "hex");
     const random = randomHex.toString("base64");
     const verifierCode = base64url(random);
@@ -187,24 +190,49 @@ app.get("/generate-challenge-code", (req, res) => {
     const _challengeCode = createHash("sha256").update(verifierCode).digest("base64");
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 
+    const codePath = path.join(__dirname, "code.json");
+    const isExists = await fileExists(codePath);
+    if(!isExists) fs.createFileSync(codePath, "{}");
+
+    const code = require(codePath) || {};
+
+    code.verifierCode = verifierCode;
+    code.challengeCode = challengeCode;
+
+    fs.wrteiFileSync(codePath, JSON.stringify(code, null, 4));
+
     res.status(200).json({
         verifierCode,
         challengeCode
     });
 });
 
-app.get("/verify-app", (req, res) => {
+app.get("/verify-app", async (req, res) => {
     const query = req.query;
 
     if(!query.code) return res.status(400).json({"message": "Missing authorization code"});
-    if(!query.oa_ia) return res.status(400).json({"message": "Missing zalo app id"});
+    // if(!query.oa_ia) return res.status(400).json({"message": "Missing zalo app id"});
 
+
+    const codePath = path.join(__dirname, "code.json");
+    const isExists = await fileExists(codePath);
+    if(!isExists) return res.status(500).json({
+        code: 500,
+        message: "Missing code"
+    });
+
+    const code = require(codePath);
+
+    if(!code.verifierCode) return res.status(500).json({
+        code: 500,
+        message: "Missing verifier code"
+    });
 
     const queries = {
         "code":  query.code,
-        "app_id" : query.oa_id,
+        "app_id" : appId,
         "grant_type": "authorization_code",
-        "code_verifier" : "eWZqNlUvbFZwTUhhL25qM2ZFaGxSaXFhajFqZDJOWDJMS1diaFhvV2YrWT0",
+        "code_verifier" : code.verifierCode,
     }
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
@@ -230,16 +258,24 @@ app.get("/verify-app", (req, res) => {
     });
 });
 
-app.post("/send-order-notification", (req, res) => {
+app.post("/send-order-notification", async (req, res) => {
     if(!req.body.recipient) return res.status(200).json({
         code: 400,
         message: "Missing recipient"
     });
 
-    const zaloOAAcessToken = process.env.ZALO_OA_ACCESS_TOKEN;
-    const zaloOARefreshToken = process.env.ZALO_OA_REFRESH_TOKEN;
+    const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    const isExists = await fileExists(credentialPath);
+    if(!isExists) return res.status(500).json({
+        code: 500,
+        message: "Missing zalo credential. Please set up first"
+    });
 
-    const endpoint = "https://openapi.zalo.me/v3.0/oa/message/transaction";
+    const zaloCredentials = require(credentialPath) || {};
+    if(!zaloCredentials.accessToken) return res.status(500).json({
+        code: 500,
+        message: "Missing zalo oa access token. Please set up first"
+    });
 
 
     const reqt = https.request({
@@ -247,7 +283,7 @@ app.post("/send-order-notification", (req, res) => {
         host: "openapi.zalo.me",
         path: "/v3.0/oa/message/transaction",
         headers: {
-            "access_token": zaloOAAcessToken,
+            "access_token": zaloCredentials.accessToken,
             "Content-Type": "application/json"
         }
     }, (response) => {
@@ -321,5 +357,131 @@ app.post("/send-order-notification", (req, res) => {
 
     reqt.end();
 });
+
+function fileExists(filePath) {
+    return new Promise((resolve) => {
+        fs.access(filePath, (err) => {
+            if(err) resolve(false);
+            else resolve(true);
+        });
+    });
+}
+
+app.post("/set-app-id", async(req, res) => {
+    const body = req.body;
+
+    if(!body.appId) return res.status(400).json({
+        code: 400,
+        message: "Missing zalo app id"
+    }); 
+
+    const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    const isExists = await fileExists(credentialPath);
+
+    if(!isExists) fs.createFileSync(credentialPath, "{}");
+
+    const zaloCredentials = require(credentialPath) || {};
+
+    zaloCredentials.appId = body.appId;
+
+    res.status(200).send("OK");
+})
+
+app.post("/set-zalo-oa-access-token", async (req, res) => {
+    const body = req.body;
+    if(!body.accessToken) return res.status(400).json({
+        code: 400,
+        message: "Missing zalo oa access token"
+    });
+
+    if(!body.refreshToken) return res.status(400).json({
+        code: 400,
+        message: "Missing zalo oa refresh token"
+    });
+
+    const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    const isExists = await fileExists(credentialPath);
+
+    if(!isExists) fs.createFileSync(credentialPath, "{}");
+
+    const zaloCredentials = require(credentialPath) || {};
+
+    zaloCredentials.accessToken = body.accessToken;
+    zaloCredentials.refreshToken = body.refreshToken;
+    
+    fs.wrteiFileSync(credentialPath, JSON.stringify(zaloCredentials, null, 4));
+
+    res.status(200).send("OK");
+})
+
+app.get("/app-info", async (req, res) => {
+
+    const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    const isExists = await fileExists(credentialPath);
+    if(!isExists) return res.status(500).json({
+        code: 500,
+        message: "Missing zalo credential. Please set up first"
+    });
+
+    const zaloCredentials = require(credentialPath) || {};
+    if(!zaloCredentials.accessToken) return res.status(500).json({
+        code: 500,
+        message: "Missing zalo oa access token. Please set up first"
+    });
+
+    res.status(200).json({
+        accessToken: zaloCredentials.accessToken,
+        appId: zaloCredentials.appId || appId
+    });
+});
+
+async function refreshZaloOAToken() {
+    const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    const isExists = await fileExists(credentialPath);
+    if(!isExists) return Promise.reject({
+        code: 500,
+        message: "Missing zalo credential. Please set up first"
+    });
+
+    const zaloCredentials = require(credentialPath) || {};
+    if(!zaloCredentials.accessToken) return Promise.reject({
+        code: 500,
+        message: "Missing zalo oa access token. Please set up first"
+    });
+
+    // if(!zaloCredentials.appId) return Promise.reject({
+    //     code: 500,
+    //     message: "Missing zalo app id. Please set up first"
+    // });
+
+    if(!zaloCredentials.refreshToken) return Promise.reject({
+        code: 500,
+        message: "Missing zalo oa refresh token. Please set up first"
+    });
+
+    const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
+    return new Promise((resolve, reject) => {
+        request.post({
+            url: endpoint,
+            headers: {
+                secret_key: secretKey,
+            },
+            form: {
+                refresh_token: zaloCredentials.refreshToken,
+                app_id: appId,
+                grant_type: "refresh_token"
+            }
+        }, (error, response, body) => {
+            if(error) reject(error);
+            else {
+                if(response.statusCode === 200) resolve(JSON.parse(body));
+                else reject({
+                    code: response.statusCode,
+                    ...JSON.parse(body)
+                })
+            }
+        })
+    })
+}
 
 app.listen(process.env.PORT || 3000)
