@@ -6,7 +6,7 @@ const serviceAccountFileName = process.env.SERVICE_ACCOUNT_FILENAME;
 
 
 
-export async function init(s3) {
+module.exports.init = async function init(s3) {
     if(global.firestoreInited) return getFirestore();
 
     try {
