@@ -528,7 +528,7 @@ app.get('/load-json/:filename', async (req, res) => {
         res.send(s3File.Body.toString()).end()
     }
     catch (e) {
-        if (error.code === 'NoSuchKey') {
+        if (e.code === 'NoSuchKey') {
             res.status(404).json({
                 code: 404,
                 message: `No such key ${filename}`
@@ -536,7 +536,7 @@ app.get('/load-json/:filename', async (req, res) => {
         } else {
             res.status(500).json({
                 code: 500,
-                message: error.message
+                message: e.message
             });
         }
     }
