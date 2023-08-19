@@ -496,7 +496,7 @@ app.post('/save-json', async (req, res) => {
     try {
         await s3.putObject({
             Body: JSON.stringify(content),
-            Bucket: Bucket,
+            Bucket: bucket,
             Key: filename,
         }).promise()
     
@@ -520,7 +520,7 @@ app.get('/load-json/:filename', async (req, res) => {
     });
     try {
         let s3File = await s3.getObject({
-            Bucket: Bucket,
+            Bucket: bucket,
             Key: filename,
         }).promise();
 
