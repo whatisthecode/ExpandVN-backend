@@ -209,16 +209,25 @@ app.get("/generate-challenge-code", async (req, res) => {
     const firestoreDB = await init(s3);
 
     const docRef = firestoreDB.collection('config').doc('code');
+    try {
+        await docRef.set({
+            verifierCode,
+            challengeCode
+        });
+        res.status(200).json({
+            verifierCode,
+            challengeCode
+        });
+    }
+    catch (e) {
+        res.status(500).json({
+            code: 500,
+            message: e.message
+        })
+    }
 
-    await docRef.set({
-        verifierCode,
-        challengeCode
-    });
 
-    res.status(200).json({
-        verifierCode,
-        challengeCode
-    });
+
 });
 
 app.get("/verify-app", async (req, res) => {
@@ -509,11 +518,11 @@ app.post('/save-json', async (req, res) => {
             Bucket: bucket,
             Key: filename,
         }).promise()
-    
+
         res.set('Content-type', 'text/plain');
         res.send('ok').end();
     }
-    catch(e){
+    catch (e) {
         res.status(500).json({
             code: 500,
             message: e.message
