@@ -16,6 +16,7 @@ const appId = process.env.ZALO_APP_ID || "";
 
 const app = express();
 const AWS = require("aws-sdk");
+const { init } = require('./storage');
 const s3 = new AWS.S3();
 
 const bucket = process.env.CYCLIC_BUCKET_NAME || "";
@@ -204,6 +205,15 @@ app.get("/generate-challenge-code", async (req, res) => {
     // code.challengeCode = challengeCode;
 
     // fs.writeFileSync(codePath, JSON.stringify(code, null, 4));
+
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('config').doc('code');
+
+    await docRef.set({
+        verifierCode,
+        challengeCode
+    });
 
     res.status(200).json({
         verifierCode,
