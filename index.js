@@ -15,6 +15,10 @@ const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
 const appId = process.env.ZALO_APP_ID || "";
 
 const app = express();
+const AWS = require("aws-sdk");
+const s3 = new AWS.S3();
+
+const bucket = process.env.CYCLIC_BUCKET_NAME || "";
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -23,17 +27,17 @@ app.get('/user-phone', (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
     const token = req.headers["X-Token"] || req.headers["x-token"];
 
-    if(!secretKey) return res.status(200).json({
+    if (!secretKey) return res.status(200).json({
         code: 500,
         message: "Permission denined"
     });
 
-    if(!userAccessToken) return res.status(200).json({
+    if (!userAccessToken) return res.status(200).json({
         code: 400,
         message: "Missing user access token"
     });
 
-    if(!token) return res.status(200).json({
+    if (!token) return res.status(200).json({
         code: 401,
         message: "Missing token"
     });
@@ -66,7 +70,7 @@ app.get('/user-phone', (req, res) => {
                     message: data.error ? data.message : undefined
                 });
             }
-            catch(e){
+            catch (e) {
                 const data = JSON.parse(body);
                 return res.status(500).json({
                     code: 500,
@@ -80,17 +84,17 @@ app.get('/user-location', (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
     const token = req.headers["X-Token"] || req.headers["x-token"];
 
-    if(!secretKey) return res.status(200).json({
+    if (!secretKey) return res.status(200).json({
         code: 500,
         message: "Permission denined"
     });
 
-    if(!userAccessToken) return res.status(200).json({
+    if (!userAccessToken) return res.status(200).json({
         code: 400,
         message: "Missing user access token"
     });
 
-    if(!token) return res.status(200).json({
+    if (!token) return res.status(200).json({
         code: 401,
         message: "Missing token"
     });
@@ -118,8 +122,8 @@ app.get('/user-location', (req, res) => {
             try {
                 const data = JSON.parse(body);
 
-                if(!data.error) {
-                    const {latitude, longitude} = data.data;
+                if (!data.error) {
+                    const { latitude, longitude } = data.data;
                     const optionss = {
                         url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDr3fhrxYjKoUWG1de5OCeWV66as9t3-r8`
                     }
@@ -136,17 +140,17 @@ app.get('/user-location', (req, res) => {
                             const dataa = JSON.parse(bodyy);
 
                             const results = dataa.error ? [] : (dataa.results || []);
-                            
+
                             const location = {
                                 premise: "",
                                 street_address: ""
                             }
 
                             results.map(r => {
-                                if(r.types[0] === "street_address" && !location.street_address) {
+                                if (r.types[0] === "street_address" && !location.street_address) {
                                     location.street_address = r.formatted_address;
                                 }
-                                else if(r.types[0] === "premise" && !location.premise) {
+                                else if (r.types[0] === "premise" && !location.premise) {
                                     location.premise = r.formatted_address;
                                 }
                             });
@@ -171,7 +175,7 @@ app.get('/user-location', (req, res) => {
                     });
                 }
             }
-            catch(e){
+            catch (e) {
                 const data = JSON.parse(body);
                 return res.status(500).json({
                     code: 500,
@@ -210,7 +214,7 @@ app.get("/generate-challenge-code", async (req, res) => {
 app.get("/verify-app", async (req, res) => {
     const query = req.query;
 
-    if(!query.code) return res.status(400).json({"message": "Missing authorization code"});
+    if (!query.code) return res.status(400).json({ "message": "Missing authorization code" });
     // if(!query.oa_ia) return res.status(400).json({"message": "Missing zalo app id"});
 
 
@@ -229,10 +233,10 @@ app.get("/verify-app", async (req, res) => {
     // });
 
     const queries = {
-        "code":  query.code,
-        "app_id" : appId,
+        "code": query.code,
+        "app_id": appId,
         "grant_type": "authorization_code",
-        "code_verifier" : process.env.VERIFIER_CODE,
+        "code_verifier": process.env.VERIFIER_CODE,
     }
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
@@ -252,19 +256,19 @@ app.get("/verify-app", async (req, res) => {
             });
         }
         else {
-            if(response.statusCode === 200) res.status(200).json(JSON.parse(body));
+            if (response.statusCode === 200) res.status(200).json(JSON.parse(body));
             else res.status(400).json(JSON.parse(body));
         }
     });
 });
 
 app.post("/send-order-notification", async (req, res) => {
-    if(!req.body.recipient) return res.status(200).json({
+    if (!req.body.recipient) return res.status(200).json({
         code: 400,
         message: "Missing recipient"
     });
 
-    if(!req.body.content) return res.status(200).json({
+    if (!req.body.content) return res.status(200).json({
         code: 400,
         message: "Missing content"
     });
@@ -352,19 +356,19 @@ app.post("/send-order-notification", async (req, res) => {
 function fileExists(filePath) {
     return new Promise((resolve) => {
         fs.access(filePath, (err) => {
-            if(err) resolve(false);
+            if (err) resolve(false);
             else resolve(true);
         });
     });
 }
 
-app.post("/set-app-id", async(req, res) => {
+app.post("/set-app-id", async (req, res) => {
     const body = req.body;
 
-    if(!body.appId) return res.status(400).json({
+    if (!body.appId) return res.status(400).json({
         code: 400,
         message: "Missing zalo app id"
-    }); 
+    });
 
     // const credentialPath = path.join(__dirname, "zalo-credentials.json");
     // const isExists = await fileExists(credentialPath);
@@ -380,12 +384,12 @@ app.post("/set-app-id", async(req, res) => {
 
 app.post("/set-zalo-oa-access-token", async (req, res) => {
     const body = req.body;
-    if(!body.accessToken) return res.status(400).json({
+    if (!body.accessToken) return res.status(400).json({
         code: 400,
         message: "Missing zalo oa access token"
     });
 
-    if(!body.refreshToken) return res.status(400).json({
+    if (!body.refreshToken) return res.status(400).json({
         code: 400,
         message: "Missing zalo oa refresh token"
     });
@@ -399,7 +403,7 @@ app.post("/set-zalo-oa-access-token", async (req, res) => {
 
     // zaloCredentials.accessToken = body.accessToken;
     // zaloCredentials.refreshToken = body.refreshToken;
-    
+
     // fs.writeFileSync(credentialPath, JSON.stringify(zaloCredentials, null, 4));
 
     res.status(200).send("OK");
@@ -410,14 +414,14 @@ app.get("/app-info", async (req, res) => {
     // const credentialPath = path.join(__dirname, "zalo-credentials.json");
     // const isExists = await fileExists(credentialPath);
     // if(!isExists) return res.status(500).json({
-        // code: 500,
-        // message: "Missing zalo credential. Please set up first"
+    // code: 500,
+    // message: "Missing zalo credential. Please set up first"
     // });
 
     // const zaloCredentials = require(credentialPath) || {};
     // if(!zaloCredentials.accessToken) return res.status(500).json({
-        // code: 500,
-        // message: "Missing zalo oa access token. Please set up first"
+    // code: 500,
+    // message: "Missing zalo oa access token. Please set up first"
     // });
 
     res.status(200).json({
@@ -430,14 +434,14 @@ async function refreshZaloOAToken() {
     // const credentialPath = path.join(__dirname, "zalo-credentials.json");
     // const isExists = await fileExists(credentialPath);
     // if(!isExists) return Promise.reject({
-        // code: 500,
-        // message: "Missing zalo credential. Please set up first"
+    // code: 500,
+    // message: "Missing zalo credential. Please set up first"
     // });
 
     // const zaloCredentials = require(credentialPath) || {};
     // if(!zaloCredentials.accessToken) return Promise.reject({
-        // code: 500,
-        // message: "Missing zalo oa access token. Please set up first"
+    // code: 500,
+    // message: "Missing zalo oa access token. Please set up first"
     // });
 
     // if(!zaloCredentials.appId) return Promise.reject({
@@ -463,9 +467,9 @@ async function refreshZaloOAToken() {
                 grant_type: "refresh_token"
             }
         }, (error, response, body) => {
-            if(error) reject(error);
+            if (error) reject(error);
             else {
-                if(response.statusCode === 200) resolve(JSON.parse(body));
+                if (response.statusCode === 200) resolve(JSON.parse(body));
                 else reject({
                     code: response.statusCode,
                     ...JSON.parse(body)
@@ -474,5 +478,68 @@ async function refreshZaloOAToken() {
         })
     })
 }
+
+app.post('/save-json', async (req, res) => {
+    const filename = req.body.filename;
+
+    if (!filename) return res.status(400).json({
+        code: 400,
+        message: "Missing filename"
+    });
+
+    const content = req.body.content;
+    if (!content) return res.status(400).json({
+        code: 400,
+        message: "Missing content"
+    })
+
+    try {
+        await s3.putObject({
+            Body: JSON.stringify(content),
+            Bucket: Bucket,
+            Key: filename,
+        }).promise()
+    
+        res.set('Content-type', 'text/plain');
+        res.send('ok').end();
+    }
+    catch(e){
+        res.status(500).json({
+            code: 500,
+            message: e.message
+        })
+    }
+})
+
+app.get('/load-json/:filename', async (req, res) => {
+    const filename = req.params.filename;
+
+    if (!filename) return res.status(400).json({
+        code: 400,
+        message: "Missing filename"
+    });
+    try {
+        let s3File = await s3.getObject({
+            Bucket: Bucket,
+            Key: filename,
+        }).promise();
+
+        res.set('Content-type', s3File.ContentType)
+        res.send(s3File.Body.toString()).end()
+    }
+    catch (e) {
+        if (error.code === 'NoSuchKey') {
+            res.status(404).json({
+                code: 404,
+                message: `No such key ${filename}`
+            });
+        } else {
+            res.status(500).json({
+                code: 500,
+                message: error.message
+            });
+        }
+    }
+})
 
 app.listen(process.env.PORT || 3000)
