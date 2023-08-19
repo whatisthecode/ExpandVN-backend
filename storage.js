@@ -7,7 +7,7 @@ const serviceAccountFileName = process.env.SERVICE_ACCOUNT_FILENAME;
 
 
 module.exports.init = async function init(s3) {
-    if(global.firestoreInited) return getFirestore();
+    if(global.firestoreInited) return getFirestore("expand-vn-zalo-mini-app");
 
     try {
         const s3File = await s3.getObject({
@@ -18,13 +18,13 @@ module.exports.init = async function init(s3) {
         const body = s3File.Body.toString();
 
         const serviceAccount = JSON.parse(body);
-        initializeApp({
+        const firebaseApp = initializeApp({
             credential: cert(serviceAccount)
         });
 
         global.firestoreInited = true;
 
-        return getFirestore();
+        return getFirestore(firebaseApp);
     }
     catch(e){
         return Promise.reject(e);
