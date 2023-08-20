@@ -23,6 +23,9 @@ const bucket = process.env.CYCLIC_BUCKET_NAME || "";
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ 
+    extended: true 
+}));
 
 app.get('/user-phone', (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
