@@ -281,10 +281,11 @@ app.get("/verify-app", async (req, res) => {
                 const oaToken = JSON.parse(body);
                 const docRef = firestoreDB.collection('configs').doc("tokens");
                 try {
-                    await docRef.set({
-                        oaAccessToken: oaToken.access_token,
-                        oaRefreshToken: oaToken.refresh_token
-                    });
+                    // await docRef.set({
+                    //     oaAccessToken: oaToken.access_token,
+                    //     oaRefreshToken: oaToken.refresh_token
+                    // });
+                    res.status(200).json(oaToken);
                 }
                 catch(e){
                     res.status(500).json({
@@ -292,7 +293,6 @@ app.get("/verify-app", async (req, res) => {
                         message: e.message
                     })
                 }
-                res.status(200).json(oaToken);
             }
             else res.status(400).json(JSON.parse(body));
         }
