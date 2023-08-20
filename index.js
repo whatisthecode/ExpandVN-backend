@@ -728,8 +728,7 @@ app.get("/api/seller-list", async (_, res) => {
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
-            data: sellerList,
-            raw: sellerListCache
+            data: sellerList
         })
     }
     catch(e){
