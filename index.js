@@ -223,7 +223,7 @@ app.get("/generate-challenge-code", async (req, res) => {
         //     challengeCode
         // })
 
-        collectionRef.add({
+        await collectionRef.add({
             verifierCode,
             challengeCode
         });
