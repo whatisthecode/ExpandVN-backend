@@ -608,7 +608,7 @@ app.post("/add-data/:type", async (req, res) => {
 
     const _data = req.body;
 
-    if(typeof _data !== "object" || !data) return res.status(400).json({
+    if(typeof _data !== "object" || !_data) return res.status(400).json({
         code: 400,
         message: "Data input must be an array object or an object"
     })
