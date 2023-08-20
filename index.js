@@ -469,8 +469,16 @@ app.get("/app-info", async (req, res) => {
     // message: "Missing zalo oa access token. Please set up first"
     // });
 
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("code");
+
+    const snapshot = await docRef.get();
+
+    const { oaAccessToken } = snapshot.data();
+
     res.status(200).json({
-        accessToken: process.env.ZALO_OA_ACCESS_TOKEN,
+        accessToken: oaAccessToken,
         appId: appId
     });
 });
@@ -499,6 +507,14 @@ async function refreshZaloOAToken() {
     //     message: "Missing zalo oa refresh token. Please set up first"
     // });
 
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("code");
+
+    const snapshot = await docRef.get();
+
+    const { refreshToken } = snapshot.data();
+
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
     return new Promise((resolve, reject) => {
         request.post({
@@ -507,7 +523,7 @@ async function refreshZaloOAToken() {
                 secret_key: secretKey,
             },
             form: {
-                refresh_token: process.env.ZALO_OA_REFRESH_TOKEN,
+                refresh_token: refreshToken,
                 app_id: appId,
                 grant_type: "refresh_token"
             }
