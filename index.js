@@ -217,15 +217,16 @@ app.get("/generate-challenge-code", async (req, res) => {
         const snapshot = await docRef.get();
         const data = snapshot.data();
 
-        await  docRef.set({
-            ...data,
-            verifierCode,
-            challengeCode
-        })
+        // await  docRef.set({
+        //     ...data,
+        //     verifierCode,
+        //     challengeCode
+        // })
 
         res.status(200).json({
             verifierCode,
-            challengeCode
+            challengeCode,
+            data: data
         });
     }
     catch (e) {
