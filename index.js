@@ -756,7 +756,7 @@ app.get("/api/food-list/:sellerSlug", async (req, res) => {
         else {
             const collectionRef = firestoreDB.collection("foods");
     
-            const docs = await collectionRef.get();
+            const docs = await collectionRef.where("sellerSlug", "==", sellerSlug).get();
             foodList = [];
 
             docs.forEach((doc) => {
