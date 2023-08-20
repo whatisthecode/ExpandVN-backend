@@ -626,6 +626,7 @@ app.post("/add-data/:type", async (req, res) => {
         isValid = true;
         for(let i = 0; i < dataLength; i++) {
             const item = data[i];
+            console.log(JSON.stringify(item));
             const docRef = firestoreDB.collection("sellers").doc(item.id);
             batch.set(docRef, {
                 ...item
