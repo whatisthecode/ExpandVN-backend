@@ -622,11 +622,12 @@ app.post("/add-data/:type", async (req, res) => {
 
     let isValid = false;
 
+    console.log(JSON.stringify(data));
+
     if(type === "seller") {
         isValid = true;
         for(let i = 0; i < dataLength; i++) {
             const item = data[i];
-            console.log(JSON.stringify(item));
             const docRef = firestoreDB.collection("sellers").doc(item.id);
             batch.set(docRef, {
                 ...item
