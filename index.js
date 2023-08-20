@@ -706,7 +706,7 @@ app.get("/api/seller-list", async (_, res) => {
         let cacheStatus = "missing cache";
         if(sellerListCache) {
         
-            sellerList = sellerListCache.data;
+            sellerList = sellerListCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
@@ -751,7 +751,7 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
         let foodList;
         let cacheStatus = "missing cache";
         if(foodListCache) {
-            foodList = foodListCache.data;
+            foodList = foodListCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
