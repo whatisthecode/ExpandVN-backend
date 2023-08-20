@@ -203,6 +203,7 @@ app.get("/generate-challenge-code", async (req, res) => {
         try {
             const snapshot = await docRef.get();
             const data = snapshot.data();
+            console.log("+++++++++++++++++++++++++++++++++++++++++++++++");
             await docRef.update({
                 ...data,
                 verifierCode,
