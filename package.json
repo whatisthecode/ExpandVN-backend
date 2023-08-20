@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/cyclic-software/starter-express-api#readme",
   "dependencies": {
+    "@cyclic.sh/dynamodb": "^0.0.35",
     "aws-sdk": "^2.1440.0",
     "base64url": "^3.0.1",
     "body-parser": "^1.20.2",

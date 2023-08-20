@@ -674,24 +674,51 @@ app.post("/add-data/:type", async (req, res) => {
 });
 
 
-
+const CyclicDB = require('@cyclic.sh/dynamodb');
+const cylicDB = CyclicDB(process.env.CYCLIC_DB);
 
 app.get("/api/seller-list", async (_, res) => {
     const firestoreDB = await init(s3);
 
-    const collectionRef = firestoreDB.collection("sellers");
+    const cache = cylicDB.collection("cache");
+    try {
+        const sellerListCache = await cache.get("api-seller-list");
+        let sellerList;
+        let cacheStatus = "missing cache";
+        if(sellerListCache) {
+            sellerList = sellerListCache;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("sellers");
     
-    const docs = await collectionRef.get();
+            const docs = await collectionRef.get();
+            sellerList = [];
 
-    const sellerList = [];
-    docs.forEach((doc) => {
-        sellerList.push(doc.data());
-    });
+            docs.forEach((doc) => {
+                sellerList.push(doc.data());
+            });
 
-    res.status(200).json({
-        code: 200,
-        data: sellerList
-    })
+            await cache.set("api-seller-list", sellerList.map(seller => {
+                return {
+                    ...seller,
+                    ttl: (Date.now() / 1000) + 300
+                }
+            }));
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: sellerList
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    }
 });
 
 const port = process.env.PORT || 3000;
