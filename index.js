@@ -601,6 +601,76 @@ app.get('/load-json/:filename', async (req, res) => {
             });
         }
     }
-})
+});
 
-app.listen(process.env.PORT || 3000)
+app.post("/add-data/:type", async (req, res) => {
+    const type = req.params.type;
+
+    const _data = req.body;
+
+    if(typeof _data !== "object" || !data) return res.status(400).json({
+        code: 400,
+        message: "Data input must be an array object or an object"
+    })
+
+    const data = Array.isArray(_data) ? _data : [_data];
+
+    const firestoreDB = await init(s3);
+
+    const batch = firestoreDB.batch();
+    const dataLength = data.length;
+
+    let isValid = false;
+
+    if(type === "seller") {
+        isValid = true;
+        for(let i = 0; i < dataLength; i++) {
+            const item = data[i];
+            const docRef = firestoreDB.collection("sellers").doc(item.id);
+            batch.set(docRef, {
+                ...item
+            }, {
+                merge: true
+            });
+        }
+    }
+    else if(type === "food") {
+        isValid = true;
+        for(let i = 0; i < dataLength; i++) {
+            const item = data[i];
+            const docRef = firestoreDB.collection("foods").doc(item.id);
+            batch.set(docRef, {
+                ...item
+            }, {
+                merge: true
+            });
+        }
+    }
+
+    if(!isValid) {
+        return res.status(200).json({
+            code: 200,
+            message: "Nothing happened"
+        });
+    }
+    else {
+        try {
+            const result = await batch.commit();
+            return res.status(200).json({
+                code: 200,
+                data: result
+            })
+        }
+        catch(e){
+            return res.status(500).json({
+                code: 500,
+                message: e.message
+            })
+        }
+    }
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log("Server started at port " + port);
+});
