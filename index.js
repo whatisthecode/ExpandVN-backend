@@ -187,7 +187,7 @@ app.get('/user-location', (req, res) => {
 
 app.get("/generate-challenge-code", async (req, res) => {
     const randomHex = Buffer.from(randomBytes(32), "hex");
-    const random = randomHex.toString("base64");
+    const random = randomHex.toString();
     const verifierCode = base64url(random);
     const _challengeCode = createHash("sha256").update(verifierCode).digest("base64");
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
