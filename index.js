@@ -739,7 +739,7 @@ app.get("/api/seller-list", async (_, res) => {
     }
 });
 
-app.get("/api/seller/:sellerSlug", async (req, res) => {
+app.get("/api/food-list/:sellerSlug", async (req, res) => {
     const sellerSlug = req.params.sellerSlug;
     const firestoreDB = await init(s3);
 
