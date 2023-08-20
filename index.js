@@ -208,12 +208,14 @@ app.get("/generate-challenge-code", async (req, res) => {
 
     const firestoreDB = await init(s3);
 
-    const collectionRef = firestoreDB.collection('configs');
+    const docRef = firestoreDB.collection('configs').doc("code");
     try {
-        // await docRef.set({
-        //     verifierCode,
-        //     challengeCode
-        // });
+        await docRef.set({
+            verifierCode,
+            challengeCode
+        }, {
+            merge: true
+        });
         // const snapshot = await docRef.get();
         // const data = snapshot.data();
 
@@ -223,10 +225,10 @@ app.get("/generate-challenge-code", async (req, res) => {
         //     challengeCode
         // })
 
-        await collectionRef.add({
-            verifierCode,
-            challengeCode
-        });
+        // await collectionRef.add({
+        //     verifierCode,
+        //     challengeCode
+        // });
 
         res.status(200).json({
             verifierCode,
