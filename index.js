@@ -326,7 +326,7 @@ app.post("/send-order-notification", async (req, res) => {
 
     const firestoreDB = await init(s3);
 
-    const docRef = firestoreDB.collection('configs').doc("code");
+    const docRef = firestoreDB.collection('configs').doc("tokens");
 
     const snapshot = await docRef.get();
 
@@ -509,7 +509,7 @@ async function refreshZaloOAToken() {
 
     const firestoreDB = await init(s3);
 
-    const docRef = firestoreDB.collection('configs').doc("code");
+    const docRef = firestoreDB.collection('configs').doc("tokens");
 
     const snapshot = await docRef.get();
 
