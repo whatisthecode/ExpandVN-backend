@@ -705,6 +705,7 @@ app.get("/api/seller-list", async (_, res) => {
         let sellerList;
         let cacheStatus = "missing cache";
         if(sellerListCache) {
+        
             sellerList = sellerListCache.data;
             cacheStatus = "hit cache";
         }
@@ -727,7 +728,8 @@ app.get("/api/seller-list", async (_, res) => {
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
-            data: sellerList
+            data: sellerList,
+            raw: sellerListCache
         })
     }
     catch(e){
