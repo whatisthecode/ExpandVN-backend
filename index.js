@@ -193,23 +193,16 @@ app.get("/generate-challenge-code", async (req, res) => {
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 
     const firestoreDB = await init(s3);
-
+    
     const docRef = firestoreDB.collection('configs').doc("code");
+    
     try {
-        try {
-            await docRef.update({
-                verifierCode,
-                challengeCode
-            })
-        }
-        catch(e) {
-            if(e.code === 5) {
-                await docRef.set({
-                    verifierCode,
-                    challengeCode
-                })
-            }
-        }
+        await docRef.set({
+            verifierCode,
+            challengeCode
+        }, {
+            merge: true
+        });
 
         res.status(200).json({
             verifierCode,

@@ -7,7 +7,7 @@ const serviceAccountFileName = process.env.SERVICE_ACCOUNT_FILENAME;
 
 
 module.exports.init = async function init(s3) {
-    if(global.firestoreInited) return getFirestore("expand-vn-zalo-mini-app");
+    if(global.firestoreInited) return getFirestore();
 
     try {
         const s3File = await s3.getObject({
