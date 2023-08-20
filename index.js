@@ -211,7 +211,7 @@ app.get("/generate-challenge-code", async (req, res) => {
             })
         }
         catch(e) {
-            console.log("================================================");
+            console.log("================================================", e.code);
             if(e.code === 5) {
                 await docRef.set({
                     verifierCode,
