@@ -250,13 +250,15 @@ app.get("/verify-app", async (req, res) => {
 
     const data = snapshot.data();
 
-    console.log(data);
+    const {
+        verifierCode 
+    } = data;
 
     const queries = {
         "code": query.code,
         "app_id": appId,
         "grant_type": "authorization_code",
-        "code_verifier": "",
+        "code_verifier": verifierCode,
     }
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
