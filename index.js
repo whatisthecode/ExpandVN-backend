@@ -230,8 +230,7 @@ app.get("/generate-challenge-code", async (req, res) => {
 
         res.status(200).json({
             verifierCode,
-            challengeCode,
-            data: data
+            challengeCode
         });
     }
     catch (e) {
