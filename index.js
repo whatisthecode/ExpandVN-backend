@@ -677,16 +677,35 @@ app.post("/add-data/:type", async (req, res) => {
 const CyclicDB = require('@cyclic.sh/dynamodb');
 const cylicDB = CyclicDB(process.env.CYCLIC_DB);
 
+app.get("/api/clear-cache/:type", async (req, res) => {
+    const cache = cylicDB.collection("cache");
+    const type = req.params.type;
+
+    if(type === "all") {
+        const data = await cache.delete("api-seller-list");
+        return res.status(200).json({
+            code: 200,
+            data: data
+        })
+    }
+
+    return res.status(200).json({
+        code: 200,
+        message: "Nothing happened"
+    })
+})
+
 app.get("/api/seller-list", async (_, res) => {
     const firestoreDB = await init(s3);
 
     const cache = cylicDB.collection("cache");
     try {
-        const sellerListCache = await cache.get("api-seller-list");
+        const cacheKey = "api-seller-list";
+        const sellerListCache = await cache.get(cacheKey);
         let sellerList;
         let cacheStatus = "missing cache";
         if(sellerListCache) {
-            sellerList = sellerListCache;
+            sellerList = sellerListCache.data;
             cacheStatus = "hit cache";
         }
         else {
@@ -699,18 +718,60 @@ app.get("/api/seller-list", async (_, res) => {
                 sellerList.push(doc.data());
             });
 
-            await cache.set("api-seller-list", sellerList.map(seller => {
-                return {
-                    ...seller,
-                    ttl: (Date.now() / 1000) + 300
-                }
-            }));
+            await cache.set(cacheKey, {
+                data: sellerList,
+                ttl: (Date.now() / 1000) + 300   
+            });
         }
     
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: sellerList
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    }
+});
+
+app.get("/api/seller/:sellerSlug", async (req, res) => {
+    const sellerSlug = req.params.sellerSlug;
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-food-list-" + sellerSlug;
+        const foodListCache = await cache.get(cacheKey);
+        let foodList;
+        let cacheStatus = "missing cache";
+        if(foodListCache) {
+            foodList = foodListCache.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("foods");
+    
+            const docs = await collectionRef.get();
+            foodList = [];
+
+            docs.forEach((doc) => {
+                foodList.push(doc.data());
+            });
+
+            await cache.set(cacheKey, {
+                data:  foodList,
+                ttl: (Date.now() / 1000) + 300
+            });
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: foodList
         })
     }
     catch(e){
