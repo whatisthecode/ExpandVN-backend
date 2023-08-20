@@ -212,8 +212,7 @@ app.get("/generate-challenge-code", async (req, res) => {
     catch (e) {
         res.status(500).json({
             code: 500,
-            message: e.message,
-            raw: e
+            message: e.message
         })
     }
 
@@ -281,10 +280,18 @@ app.get("/verify-app", async (req, res) => {
             if (response.statusCode === 200) {
                 const oaToken = JSON.parse(body);
                 const docRef = firestoreDB.collection('configs').doc("tokens");
-                // await docRef.set({
-                //     oaAccessToken: oaToken.access_token,
-                //     oaRefreshToken: oaToken.refresh_token
-                // });
+                try {
+                    await docRef.set({
+                        oaAccessToken: oaToken.access_token,
+                        oaRefreshToken: oaToken.refresh_token
+                    });
+                }
+                catch(e){
+                    res.status(500).json({
+                        code: 500,
+                        message: e.message
+                    })
+                }
                 res.status(200).json(oaToken);
             }
             else res.status(400).json(JSON.parse(body));
