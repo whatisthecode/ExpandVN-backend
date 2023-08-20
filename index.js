@@ -222,7 +222,8 @@ app.get("/generate-challenge-code", async (req, res) => {
     catch (e) {
         res.status(500).json({
             code: 500,
-            message: e.message
+            message: e.message,
+            raw: e
         })
     }
 
