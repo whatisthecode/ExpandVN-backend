@@ -609,7 +609,7 @@ app.get('/load-json/:filename', async (req, res) => {
 app.post("/add-data/:type", async (req, res) => {
     const type = req.params.type;
 
-    const _data = req.body;
+    const _data = req.body.data;
 
     if(typeof _data !== "object" || !_data) return res.status(400).json({
         code: 400,
@@ -624,8 +624,6 @@ app.post("/add-data/:type", async (req, res) => {
     const dataLength = data.length;
 
     let isValid = false;
-
-    console.log(JSON.stringify(data));
 
     if(type === "seller") {
         isValid = true;
