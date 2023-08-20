@@ -208,20 +208,25 @@ app.get("/generate-challenge-code", async (req, res) => {
 
     const firestoreDB = await init(s3);
 
-    const docRef = firestoreDB.collection('config').doc('code');
+    const collectionRef = firestoreDB.collection('configs');
     try {
         // await docRef.set({
         //     verifierCode,
         //     challengeCode
         // });
-        const snapshot = await docRef.get();
-        const data = snapshot.data();
+        // const snapshot = await docRef.get();
+        // const data = snapshot.data();
 
         // await  docRef.set({
         //     ...data,
         //     verifierCode,
         //     challengeCode
         // })
+
+        collectionRef.add({
+            verifierCode,
+            challengeCode
+        });
 
         res.status(200).json({
             verifierCode,
