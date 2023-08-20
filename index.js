@@ -118,8 +118,6 @@ app.get('/user-location', (req, res) => {
                 input: options
             })
         } else {
-            // console.log("Response Code:", response.statusCode);
-            // console.log("Response Body:", body);
             try {
                 const data = JSON.parse(body);
 
@@ -191,20 +189,8 @@ app.get("/generate-challenge-code", async (req, res) => {
     const randomHex = Buffer.from(randomBytes(32), "hex");
     const random = randomHex.toString("base64");
     const verifierCode = base64url(random);
-    // const challengeCode = base64url(Buffer.from(createHash("sha256").update(verifierCode).digest("hex")).toString());
     const _challengeCode = createHash("sha256").update(verifierCode).digest("base64");
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
-
-    // const codePath = path.join(__dirname, "code.json");
-    // const isExists = await fileExists(codePath);
-    // if(!isExists) fs.writeFileSync(codePath, "{}");
-
-    // const code = require(codePath) || {};
-
-    // code.verifierCode = verifierCode;
-    // code.challengeCode = challengeCode;
-
-    // fs.writeFileSync(codePath, JSON.stringify(code, null, 4));
 
     const firestoreDB = await init(s3);
 
@@ -216,19 +202,6 @@ app.get("/generate-challenge-code", async (req, res) => {
         }, {
             merge: true
         });
-        // const snapshot = await docRef.get();
-        // const data = snapshot.data();
-
-        // await  docRef.set({
-        //     ...data,
-        //     verifierCode,
-        //     challengeCode
-        // })
-
-        // await collectionRef.add({
-        //     verifierCode,
-        //     challengeCode
-        // });
 
         res.status(200).json({
             verifierCode,
@@ -268,11 +241,19 @@ app.get("/verify-app", async (req, res) => {
     //     message: "Missing verifier code"
     // });
 
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("code");
+
+    const snapshot = await docRef.get();
+
+    const { codeVerifier } = snapshot.data();
+
     const queries = {
         "code": query.code,
         "app_id": appId,
         "grant_type": "authorization_code",
-        "code_verifier": process.env.VERIFIER_CODE,
+        "code_verifier": codeVerifier,
     }
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
@@ -284,7 +265,7 @@ app.get("/verify-app", async (req, res) => {
         form: queries
     };
 
-    request.post(options, (error, response, body) => {
+    request.post(options, async (error, response, body) => {
         if (error) {
             console.log(error);
             res.status(400).json({
@@ -292,7 +273,15 @@ app.get("/verify-app", async (req, res) => {
             });
         }
         else {
-            if (response.statusCode === 200) res.status(200).json(JSON.parse(body));
+            if (response.statusCode === 200) {
+                const oaToken = JSON.parse(body);
+                const docRef = firestoreDB.collection('configs').doc("tokens");
+                await docRef.set({
+                    oaAccessToken: oaToken.access_token,
+                    oaRefreshToken: oaToken.refresh_token
+                });
+                res.status(200).json();
+            }
             else res.status(400).json(JSON.parse(body));
         }
     });
@@ -323,12 +312,20 @@ app.post("/send-order-notification", async (req, res) => {
     // });
 
 
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("code");
+
+    const snapshot = await docRef.get();
+
+    const { oaAccessToken } = snapshot.data();
+
     const reqt = https.request({
         method: "POST",
         host: "openapi.zalo.me",
         path: "/v3.0/oa/message/transaction",
         headers: {
-            "access_token": process.env.ZALO_OA_ACCESS_TOKEN,
+            "access_token": oaAccessToken,
             "Content-Type": "application/json"
         }
     }, (response) => {
