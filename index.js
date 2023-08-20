@@ -673,6 +673,27 @@ app.post("/add-data/:type", async (req, res) => {
     }
 });
 
+
+
+
+app.get("/api/seller-list", async (_, res) => {
+    const firestoreDB = await init(s3);
+
+    const collectionRef = firestoreDB.collection("sellers");
+    
+    const docs = await collectionRef.get();
+
+    const sellerList = [];
+    docs.forEach((doc) => {
+        sellerList.push(doc.data());
+    });
+
+    res.status(200).json({
+        code: 200,
+        data: sellerList
+    })
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log("Server started at port " + port);
