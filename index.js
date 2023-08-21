@@ -723,13 +723,19 @@ app.get("/api/seller-list", async (_, res) => {
         }
         else {
             const collectionRef = firestoreDB.collection("sellers");
+            const foodRef = firestoreDB.collection("foods");
     
+
             const docs = await collectionRef.get();
             sellerList = [];
 
-            docs.forEach((doc) => {
-                sellerList.push(doc.data());
-            });
+            const sellerLength = docs.size();
+        
+            for(let i = 0; i < sellerLength; i++){
+                const seller = await docs.docs[i].data();
+                const hasFood = await foodRef.where("sellerSlug", "==", seller.slug).count();
+                if(hasFood) sellerList.push(seller);
+            }
 
             await cache.set(cacheKey, {
                 data: sellerList,
