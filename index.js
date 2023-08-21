@@ -770,8 +770,13 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
             const foodRef = firestoreDB.collection("foods");
 
             const querySeller = await sellerRef.where("slug", "==", sellerSlug).get();
+            const doc = querySeller.docs[0];
+            if(!doc) return res.status(200).json({
+                code: 404,
+                message: "Seller not found"
+            }) ;
 
-            seller = querySeller.docs[0].data();
+            seller = doc.data();
 
             const queryFoods = await foodRef.where("sellerSlug", "==", sellerSlug).get();
 
@@ -869,8 +874,13 @@ app.get("/api/food/:slug", async (req, res) => {
             const collectionRef = firestoreDB.collection("foods");
     
             const docs = await collectionRef.where("slug", "==", slug).get();
+            const doc = docs.docs[0];
+            if(!doc) return res.status(200).json({
+                code: 404,
+                message: "Food not found"
+            });
 
-            food = docs.docs[0].data();
+            food = doc.data();
 
             await cache.set(cacheKey, {
                 data:  food,
@@ -910,7 +920,13 @@ app.get("/api/banner", async (req, res) => {
     
             const docs = await collectionRef.where("active", "==", true).get();
             // banner = [];
-            banner = docs.docs[0].data();
+            const doc = docs.docs[0];
+            if(!doc) return res.status(200).json({
+                code: 200,
+                data: null
+            })
+
+            banner = doc.data();
             // docs.forEach((doc) => {
             //     sellerList.push(doc.data());
             // });
