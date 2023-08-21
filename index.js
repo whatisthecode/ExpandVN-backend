@@ -733,7 +733,8 @@ app.get("/api/seller-list", async (_, res) => {
         
             for(let i = 0; i < sellerLength; i++){
                 const seller = await docs.docs[i].data();
-                const hasFood = await foodRef.where("sellerSlug", "==", seller.slug).count();
+                const queryHasFood = await foodRef.where("sellerSlug", "==", seller.slug).count().get();
+                const hasFood = queryHasFood.data().count > 0 ? true : false;
                 if(hasFood) sellerList.push(seller);
             }
 
@@ -792,11 +793,10 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
                 foodList.push(doc.data());
             });
 
+            seller.foodList = foodList;
+
             await cache.set(cacheKey, {
-                data:  {
-                    ...seller,
-                    foodList
-                },
+                data: seller,
                 ttl: (Date.now() / 1000) + 300
             });
         }
@@ -804,10 +804,7 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
-            data: {
-                ...seller,
-                foodList
-            }
+            data: seller
         })
     }
     catch(e){
