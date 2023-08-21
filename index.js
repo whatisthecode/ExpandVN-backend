@@ -729,7 +729,7 @@ app.get("/api/seller-list", async (_, res) => {
             const docs = await collectionRef.get();
             sellerList = [];
 
-            const sellerLength = docs.size();
+            const sellerLength = docs.docs.length;
         
             for(let i = 0; i < sellerLength; i++){
                 const seller = await docs.docs[i].data();
