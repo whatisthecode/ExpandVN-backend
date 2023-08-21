@@ -649,6 +649,18 @@ app.post("/add-data/:type", async (req, res) => {
             });
         }
     }
+    else if(type === "banner") {
+        isValid = true;
+        for(let i = 0; i < dataLength; i++){
+            const item = data[i];
+            const docRef = firestoreDB.collection("banners").doc(item.id);
+            batch.set(docRef, {
+                ...item
+            }, {
+                merge: true
+            })
+        }
+    }
 
     if(!isValid) {
         return res.status(200).json({
@@ -878,6 +890,49 @@ app.get("/api/food/:slug", async (req, res) => {
             messge: e.message
         })
     }
+});
+
+app.get("/api/banner", async (req, res) => {
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-banner";
+        const bannerCache = await cache.get(cacheKey);
+        let banner;
+        let cacheStatus = "missing cache";
+        if(bannerCache) {
+            banner = bannerCache.props.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("banners");
+    
+            const docs = await collectionRef.where("active", "==", true).get();
+            // banner = [];
+            banner = docs.docs[0].data();
+            // docs.forEach((doc) => {
+            //     sellerList.push(doc.data());
+            // });
+
+            // await cache.set(cacheKey, {
+            //     data: banner,
+            //     ttl: (Date.now() / 1000) + 300   
+            // });
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: banner
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    } 
 });
 
 const port = process.env.PORT || 3000;
