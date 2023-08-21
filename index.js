@@ -739,6 +739,62 @@ app.get("/api/seller-list", async (_, res) => {
     }
 });
 
+app.get("/api/seller/:sellerSlug", async (req, res) => {
+    const sellerSlug = req.params.sellerSlug;
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-seller-" + sellerSlug;
+        const sellerCache = await cache.get(cacheKey);
+        let seller;
+        let cacheStatus = "missing cache";
+        if(sellerCache) {
+            seller = sellerCache.props.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const sellerRef = firestoreDB.collection("sellers");
+            const foodRef = firestoreDB.collection("foods");
+
+            const querySeller = await sellerRef.where("slug", "==", sellerSlug).get();
+
+            seller = querySeller.docs[0].data();
+
+            const queryFoods = await foodRef.where("sellerSlug", "==", sellerSlug).get();
+
+            foodList = [];
+
+            queryFoods.forEach((doc) => {
+                foodList.push(doc.data());
+            });
+
+            await cache.set(cacheKey, {
+                data:  {
+                    ...seller,
+                    foodList
+                },
+                ttl: (Date.now() / 1000) + 300
+            });
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: {
+                ...seller,
+                foodList
+            }
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    }
+});
+
 app.get("/api/food-list/:sellerSlug", async (req, res) => {
     const sellerSlug = req.params.sellerSlug;
     const firestoreDB = await init(s3);
