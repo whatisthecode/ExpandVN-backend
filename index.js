@@ -783,6 +783,47 @@ app.get("/api/food-list/:sellerSlug", async (req, res) => {
     }
 });
 
+app.get("/api/food/:slug", async (req, res) => {
+    const slug = req.params.slug;
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-food-" + slug;
+        const foodCache = await cache.get(cacheKey);
+        let food;
+        let cacheStatus = "missing cache";
+        if(foodCache) {
+            food = foodCache.props.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("foods");
+    
+            const docs = await collectionRef.where("slug", "==", slug).get();
+
+            food = docs.docs[0].data();
+
+            await cache.set(cacheKey, {
+                data:  food,
+                ttl: (Date.now() / 1000) + 300
+            });
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: food
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    }
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log("Server started at port " + port);
