@@ -747,22 +747,24 @@ app.post("/add-data/:type", async (req, res) => {
     }
 });
 
-app.get("/api/clear-cache/:type", async (req, res) => {
+app.get("/api/clear-cache/:key", async (req, res) => {
     const cache = cylicDB.collection("cache");
-    const type = req.params.type;
+    const key = req.params.key;
 
-    if(type === "all") {
+    if(key === "all") {
         const data = await cache.delete("api-seller-list");
         return res.status(200).json({
             code: 200,
             data: data
         })
     }
-
-    return res.status(200).json({
-        code: 200,
-        message: "Nothing happened"
-    })
+    else {
+        const data = await cache.delete(key);
+        return res.status(200).json({
+            code: 200,
+            data: data
+        })
+    }
 })
 
 app.get("/api/seller-list", async (_, res) => {
