@@ -163,7 +163,8 @@ app.get('/user-location', (req, res) => {
                                     location: location.premise || location.street_address
                                 } : undefined,
                                 message: dataa.error ? dataa.message : undefined,
-                                input: data.data
+                                input: data,
+                                raw: dataa
                             });
                         }
                     });
