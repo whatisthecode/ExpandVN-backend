@@ -597,6 +597,7 @@ async function refreshZaloOAToken() {
             else {
                 if (response.statusCode === 200) {
                     const result = JSON.parse(body);
+                    console.log(result);
                     await docRef.set({
                         accessToken: result.access_token,
                         refreshToken: result.refresh_token
