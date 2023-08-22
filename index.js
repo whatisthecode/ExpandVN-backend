@@ -80,7 +80,7 @@ app.get('/user-phone', async (req, res) => {
                 const data = JSON.parse(body);
                 await docRef.set({
                     userId,
-                    phoneNumber: data.number
+                    phoneNumber: !data.error ? data.data : ""
                 }, {
                     merge: true
                 })
@@ -196,7 +196,7 @@ app.get('/user-location', async (req, res) => {
                                 code: !dataa.error ? responsee.statusCode : dataa.error,
                                 data: !dataa.error ? {
                                     location: location.premise || location.street_address
-                                } : undefined,
+                                } : "",
                                 message: dataa.error ? dataa.message : undefined,
                                 input: data,
                                 raw: dataa
