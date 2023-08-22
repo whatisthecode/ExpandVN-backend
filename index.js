@@ -164,7 +164,7 @@ app.get('/user-location', async (req, res) => {
                 if (!data.error) {
                     const { latitude, longitude } = data.data;
                     const optionss = {
-                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleAPIKey}-r8`
+                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleAPIKey}`
                     }
                     request(optionss, async (errorr, responsee, bodyy) => {
                         if (errorr) {
