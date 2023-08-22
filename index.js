@@ -195,9 +195,7 @@ app.get('/user-location', async (req, res) => {
                             });
                             await docRef.set({
                                 userId,
-                                location: !dataa.error ? {
-                                    location: location.premise || location.street_address
-                                } : ""
+                                location: !dataa.error ? (location.premise || location.street_address) : ""
                             }, {
                                 merge: true
                             })
