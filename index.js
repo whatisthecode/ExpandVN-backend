@@ -78,10 +78,9 @@ app.get('/user-phone', async (req, res) => {
             // console.log("Response Body:", body);
             try {
                 const data = JSON.parse(body);
-                console.log(data);
                 await docRef.set({
                     userId,
-                    phoneNumber: data.phoneNumber
+                    phoneNumber: data.number
                 }, {
                     merge: true
                 })
@@ -92,7 +91,6 @@ app.get('/user-phone', async (req, res) => {
                 });
             }
             catch (e) {
-                console.log(e);
                 return res.status(500).json({
                     code: 500,
                     messge: e.messge
