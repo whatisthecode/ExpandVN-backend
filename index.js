@@ -27,8 +27,9 @@ app.use(bodyParser.urlencoded({
     extended: true 
 }));
 
-app.get('/user-phone', (req, res) => {
+app.get('/user-phone', async (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
+    const userId = req.headers["X-User-Id"] || req.headers["x-user-id"];
     const token = req.headers["X-Token"] || req.headers["x-token"];
 
     if (!secretKey) return res.status(200).json({
@@ -40,6 +41,11 @@ app.get('/user-phone', (req, res) => {
         code: 400,
         message: "Missing user access token"
     });
+
+    if (!userId) return res.status(200).json({
+        code: 400,
+        message: "Missing user id"
+    })
 
     if (!token) return res.status(200).json({
         code: 401,
@@ -55,7 +61,11 @@ app.get('/user-phone', (req, res) => {
         }
     };
 
-    request(options, (error, response, body) => {
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('users').doc(userId);
+
+    request(options, async (error, response, body) => {
         if (error) {
             // console.error("Error:", error);
             return res.status(200).json({
@@ -68,6 +78,12 @@ app.get('/user-phone', (req, res) => {
             // console.log("Response Body:", body);
             try {
                 const data = JSON.parse(body);
+                await docRef.set({
+                    userId,
+                    phoneNumber: data.phoneNumber
+                }, {
+                    merge: true
+                })
                 return res.status(200).json({
                     code: !data.error ? response.statusCode : data.error,
                     data: !data.error ? data.data : undefined,
@@ -83,9 +99,13 @@ app.get('/user-phone', (req, res) => {
             }
         }
     });
-})
-app.get('/user-location', (req, res) => {
+});
+
+const googleAPIKey = process.env.GOOGLE_API_KEY || "";
+
+app.get('/user-location', async (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
+    const userId = req.headers["X-User-Id"] || req.headers["x-user-id"];
     const token = req.headers["X-Token"] || req.headers["x-token"];
 
     if (!secretKey) return res.status(200).json({
@@ -97,6 +117,11 @@ app.get('/user-location', (req, res) => {
         code: 400,
         message: "Missing user access token"
     });
+
+    if (!userId) return res.status(200).json({
+        code: 400,
+        message: "Missing user id"
+    })
 
     if (!token) return res.status(200).json({
         code: 401,
@@ -111,6 +136,10 @@ app.get('/user-location', (req, res) => {
             secret_key: secretKey
         }
     };
+
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('users').doc(userId);
 
     request(options, (error, response, body) => {
         if (error) {
@@ -127,16 +156,16 @@ app.get('/user-location', (req, res) => {
                 if (!data.error) {
                     const { latitude, longitude } = data.data;
                     const optionss = {
-                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=AIzaSyDr3fhrxYjKoUWG1de5OCeWV66as9t3-r8`
+                        url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${googleAPIKey}-r8`
                     }
-                    request(optionss, (errorr, responsee, bodyy) => {
+                    request(optionss, async (errorr, responsee, bodyy) => {
                         if (errorr) {
                             // console.error("Error:", error);
                             return res.status(200).json({
                                 code: errorr.code,
                                 message: errorr.message,
                                 input: optionss
-                            })
+                            });
                         }
                         else {
                             const dataa = JSON.parse(bodyy);
@@ -156,7 +185,14 @@ app.get('/user-location', (req, res) => {
                                     location.premise = r.formatted_address;
                                 }
                             });
-
+                            await docRef.set({
+                                userId,
+                                location: !dataa.error ? {
+                                    location: location.premise || location.street_address
+                                } : undefined
+                            }, {
+                                merge: true
+                            })
                             return res.status(200).json({
                                 code: !dataa.error ? responsee.statusCode : dataa.error,
                                 data: !dataa.error ? {
@@ -963,6 +999,55 @@ app.get("/api/banner", async (req, res) => {
         res.status(200).json({
             code: 200,
             data: banner
+        })
+    }
+    catch(e){
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    } 
+});
+
+app.get("/api/user/:id", async (req, res) => {
+    const userId = req.params.id;
+
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-user-" + userId;
+        const userCache = await cache.get(cacheKey);
+        let user;
+        let cacheStatus = "missing cache";
+        if(userCache) {
+            user = userCache.props.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("users");
+    
+            const doc = collectionRef.doc(userId);
+            // banner = [];
+            const userData = await doc.get();
+
+            if(!userData) return res.status(200).json({
+                code: 404,
+                message: "User not found"
+            })
+
+            user = userData.data();
+
+            await cache.set(cacheKey, {
+                data: user,
+                ttl: (Date.now() / 1000) + 300   
+            });
+        }
+    
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: user
         })
     }
     catch(e){
