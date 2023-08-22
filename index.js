@@ -374,10 +374,10 @@ async function sendNotification(req, res) {
                     await refreshZaloOAToken();
                     sendNotification(req, res);
                 }
-                else res.status(200).send(jsonData);
+                else res.status(200).json(jsonData);
             }
             catch(e) {
-                res.status(200).send({
+                res.status(200).json({
                     code: 500,
                     message: e.message,
                     raw: data
@@ -592,10 +592,17 @@ async function refreshZaloOAToken() {
                 app_id: appId,
                 grant_type: "refresh_token"
             }
-        }, (error, response, body) => {
+        }, async (error, response, body) => {
             if (error) reject(error);
             else {
-                if (response.statusCode === 200) resolve(JSON.parse(body));
+                if (response.statusCode === 200) {
+                    const result = JSON.parse(body);
+                    await docRef.set({
+                        accessToken: result.access_token,
+                        refreshToken: result.refresh_token
+                    }, {merge:true})
+                    resolve(result);
+                }
                 else reject({
                     code: response.statusCode,
                     ...JSON.parse(body)
