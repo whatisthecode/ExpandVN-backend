@@ -302,31 +302,7 @@ app.get("/verify-app", async (req, res) => {
     });
 });
 
-app.post("/send-order-notification", async (req, res) => {
-    if (!req.body.recipient) return res.status(200).json({
-        code: 400,
-        message: "Missing recipient"
-    });
-
-    if (!req.body.content) return res.status(200).json({
-        code: 400,
-        message: "Missing content"
-    });
-
-    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
-    // const isExists = await fileExists(credentialPath);
-    // if(!isExists) return res.status(500).json({
-    //     code: 500,
-    //     message: "Missing zalo credential. Please set up first"
-    // });
-
-    // const zaloCredentials = require(credentialPath) || {};
-    // if(!zaloCredentials.accessToken) return res.status(500).json({
-    //     code: 500,
-    //     message: "Missing zalo oa access token. Please set up first"
-    // });
-
-
+function sendNotification(req, res) {
     const firestoreDB = await init(s3);
 
     const docRef = firestoreDB.collection('configs').doc("tokens");
@@ -347,8 +323,22 @@ app.post("/send-order-notification", async (req, res) => {
         let data = "";
         response.on("data", (chunk) => {
             data += chunk.toString();
-        }).once("end", () => {
-            res.status(200).send(data);
+        }).once("end", async () => {
+            try {
+                const jsonData = JSON.parse(data);
+                if(jsonData.code === -216) {
+                    await refreshZaloOAToken();
+                    sendNotification(req, res);
+                }
+                else res.status(200).send(jsonData);
+            }
+            catch(e) {
+                res.status(200).send({
+                    code: 500,
+                    message: e.message,
+                    raw: data
+                });
+            }
         });
     });
 
@@ -399,6 +389,34 @@ app.post("/send-order-notification", async (req, res) => {
     }));
 
     reqt.end();
+}
+
+app.post("/send-order-notification", async (req, res) => {
+    if (!req.body.recipient) return res.status(200).json({
+        code: 400,
+        message: "Missing recipient"
+    });
+
+    if (!req.body.content) return res.status(200).json({
+        code: 400,
+        message: "Missing content"
+    });
+
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
+    // if(!isExists) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing zalo credential. Please set up first"
+    // });
+
+    // const zaloCredentials = require(credentialPath) || {};
+    // if(!zaloCredentials.accessToken) return res.status(500).json({
+    //     code: 500,
+    //     message: "Missing zalo oa access token. Please set up first"
+    // });
+
+
+    sendNotification(req, res);
 });
 
 function fileExists(filePath) {
