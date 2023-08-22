@@ -302,7 +302,7 @@ app.get("/verify-app", async (req, res) => {
     });
 });
 
-function sendNotification(req, res) {
+async function sendNotification(req, res) {
     const firestoreDB = await init(s3);
 
     const docRef = firestoreDB.collection('configs').doc("tokens");
