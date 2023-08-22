@@ -326,6 +326,7 @@ async function sendNotification(req, res) {
         }).once("end", async () => {
             try {
                 const jsonData = JSON.parse(data);
+                console.log(jsonData);
                 if(jsonData.code === -216) {
                     await refreshZaloOAToken();
                     sendNotification(req, res);
