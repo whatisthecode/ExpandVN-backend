@@ -578,7 +578,7 @@ async function refreshZaloOAToken() {
 
     const snapshot = await docRef.get();
 
-    const { refreshToken } = snapshot.data();
+    const { oaRefreshToken } = snapshot.data();
 
     const endpoint = "https://oauth.zaloapp.com/v4/oa/access_token";
     return new Promise((resolve, reject) => {
@@ -588,7 +588,7 @@ async function refreshZaloOAToken() {
                 secret_key: secretKey,
             },
             form: {
-                refresh_token: refreshToken,
+                refresh_token: oaRefreshToken,
                 app_id: appId,
                 grant_type: "refresh_token"
             }
