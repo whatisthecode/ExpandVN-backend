@@ -78,6 +78,7 @@ app.get('/user-phone', async (req, res) => {
             // console.log("Response Body:", body);
             try {
                 const data = JSON.parse(body);
+                console.log(data);
                 await docRef.set({
                     userId,
                     phoneNumber: data.phoneNumber
@@ -91,7 +92,7 @@ app.get('/user-phone', async (req, res) => {
                 });
             }
             catch (e) {
-                const data = JSON.parse(body);
+                console.log(e);
                 return res.status(500).json({
                     code: 500,
                     messge: e.messge
