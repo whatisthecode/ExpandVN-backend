@@ -599,8 +599,8 @@ async function refreshZaloOAToken() {
                     const result = JSON.parse(body);
                     console.log(result);
                     await docRef.set({
-                        accessToken: result.access_token,
-                        refreshToken: result.refresh_token
+                        oaAccessToken: result.access_token,
+                        oaRefreshToken: result.refresh_token
                     }, {merge:true})
                     resolve(result);
                 }
