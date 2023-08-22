@@ -27,6 +27,9 @@ app.use(bodyParser.urlencoded({
     extended: true 
 }));
 
+const CyclicDB = require('@cyclic.sh/dynamodb');
+const cylicDB = CyclicDB(process.env.CYCLIC_DB);
+
 app.get('/user-phone', async (req, res) => {
     const userAccessToken = req.headers["X-User-Access-Token"] || req.headers["x-user-access-token"];
     const userId = req.headers["X-User-Id"] || req.headers["x-user-id"];
@@ -65,6 +68,9 @@ app.get('/user-phone', async (req, res) => {
 
     const docRef = firestoreDB.collection('users').doc(userId);
 
+    const cache = cylicDB.collection("cache");
+    const cacheKey = "api-user-" + userId;
+
     request(options, async (error, response, body) => {
         if (error) {
             // console.error("Error:", error);
@@ -84,6 +90,7 @@ app.get('/user-phone', async (req, res) => {
                 }, {
                     merge: true
                 })
+                await cache.delete(cacheKey);
                 return res.status(200).json({
                     code: !data.error ? response.statusCode : data.error,
                     data: !data.error ? data.data : undefined,
@@ -139,6 +146,8 @@ app.get('/user-location', async (req, res) => {
     const firestoreDB = await init(s3);
 
     const docRef = firestoreDB.collection('users').doc(userId);
+    const cache = cylicDB.collection("cache");
+    const cacheKey = "api-user-" + userId;
 
     request(options, (error, response, body) => {
         if (error) {
@@ -192,6 +201,7 @@ app.get('/user-location', async (req, res) => {
                             }, {
                                 merge: true
                             })
+                            await cache.delete(cacheKey);
                             return res.status(200).json({
                                 code: !dataa.error ? responsee.statusCode : dataa.error,
                                 data: !dataa.error ? {
@@ -738,10 +748,6 @@ app.post("/add-data/:type", async (req, res) => {
         }
     }
 });
-
-
-const CyclicDB = require('@cyclic.sh/dynamodb');
-const cylicDB = CyclicDB(process.env.CYCLIC_DB);
 
 app.get("/api/clear-cache/:type", async (req, res) => {
     const cache = cylicDB.collection("cache");
