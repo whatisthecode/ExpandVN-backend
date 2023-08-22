@@ -474,7 +474,7 @@ app.get("/app-info", async (req, res) => {
 
     const firestoreDB = await init(s3);
 
-    const docRef = firestoreDB.collection('configs').doc("code");
+    const docRef = firestoreDB.collection('configs').doc("token");
 
     const snapshot = await docRef.get();
 
