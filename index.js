@@ -562,7 +562,7 @@ app.get("/verify-zoho", async (req, res) => {
         method: "POST"
     }
 
-    // const firestoreDB = await init(s3);
+    const firestoreDB = await init(s3);
 
     request.post(options, async (error, response, body) => {
         if (error) {
@@ -574,15 +574,14 @@ app.get("/verify-zoho", async (req, res) => {
         else {
             if (response.statusCode === 200) {
                 const zohoToken = JSON.parse(body);
-                // const docRef = firestoreDB.collection('configs').doc("tokens");
+                const docRef = firestoreDB.collection('configs').doc("tokens");
                 try {
-                    // await docRef.set({
-                    //     zohoAccessToken: zohoToken.access_token,
-                    //     zohoRefreshToken: zohoToken.refresh_token,
-                    //     zohoAPIDomain: zohoToken.api_domain
-                    // }, {
-                    //     merge: true
-                    // });
+                    await docRef.set({
+                        zohoAccessToken: zohoToken.access_token,
+                        ...zohoToken.refresh_token ? {zohoRefreshToken: zohoToken.refresh_token} : {},
+                    }, {
+                        merge: true
+                    });
                     res.status(200).json(zohoToken);
                 }
                 catch(e){
