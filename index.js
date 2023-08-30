@@ -542,7 +542,7 @@ app.get("/get-zoho-code-link", (req, res) => {
     res.status(200).send(resultURL);
 });
 
-app.get("/verify-zoho", (req, res) => {
+app.get("/verify-zoho", async (req, res) => {
     const {
         code
     } = req.query;
@@ -561,6 +561,8 @@ app.get("/verify-zoho", (req, res) => {
         url: endpoint,
         method: "POST"
     }
+
+    const firestoreDB = await init(s3);
 
     request.post(options, async (error, response, body) => {
         if (error) {
