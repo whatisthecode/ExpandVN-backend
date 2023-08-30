@@ -542,6 +542,60 @@ app.get("/get-zoho-code-link", (req, res) => {
     res.status(200).send(resultURL);
 });
 
+app.get("/verify-zoho", (req, res) => {
+    const {
+        code
+    } = req.query;
+
+    if(!code) return res.status(400).send("Missing code");
+
+    const clientIdReplacer = "<$clientId>";
+    const clientSecretReplacer = "<$clientSecret>";
+    const redirectURIReplacer = "<$redirectURI>";
+    const codeReplacer = "<$code>";
+
+    const baseEndpoint = `https://accounts.zoho.com/oauth/v2/token?grant_type=authorization_code&client_id=${clientIdReplacer}&client_secret=${clientSecretReplacer}&redirect_uri=${redirectURIReplacer}&code=${codeReplacer}`;
+    const endpoint = baseEndpoint.replace(clientIdReplacer, zohoClientId).replace(clientSecretReplacer, zohoClientSecret).replace(redirectURIReplacer, encodeURIComponent("https://expand.vn/verify-zoho")).replace(codeReplacer, code);
+
+    const options = {
+        url: endpoint,
+        method: "POST"
+    }
+
+    request.post(options, async (error, response, body) => {
+        if (error) {
+            console.log(error);
+            res.status(400).json({
+                message: error.message
+            });
+        }
+        else {
+            if (response.statusCode === 200) {
+                const zohoToken = JSON.parse(body);
+                const docRef = firestoreDB.collection('configs').doc("tokens");
+                try {
+                    await docRef.set({
+                        zohoAccessToken: zohoToken.access_token,
+                        zohoRefreshToken: zohoToken.refresh_token,
+                        zohoAPIDomain: zohoToken.api_domain
+                    }, {
+                        merge: true
+                    });
+                    res.status(200).json(zohoToken);
+                }
+                catch(e){
+                    res.status(500).json({
+                        code: 500,
+                        message: e.message
+                    })
+                }
+            }
+            else res.status(400).json(JSON.parse(body));
+        }
+    });
+
+})
+
 app.get("/app-info", async (req, res) => {
 
     // const credentialPath = path.join(__dirname, "zalo-credentials.json");
