@@ -554,7 +554,7 @@ app.get("/verify-zoho", async (req, res) => {
     const redirectURIReplacer = "<$redirectURI>";
     const codeReplacer = "<$code>";
 
-    const baseEndpoint = `https://accounts.zoho.com/oauth/v2/token?grant_type=authorization_code&client_id=${clientIdReplacer}&client_secret=${clientSecretReplacer}&redirect_uri=${redirectURIReplacer}&code=${codeReplacer}`;
+    const baseEndpoint = `https://accounts.zoho.com/oauth/v2/token?grant_type=authorization_code&client_id=${clientIdReplacer}&client_secret=${clientSecretReplacer}&redirect_uri=${redirectURIReplacer}&code=${codeReplacer}&prompt=consent`;
     const endpoint = baseEndpoint.replace(clientIdReplacer, zohoClientId).replace(clientSecretReplacer, zohoClientSecret).replace(redirectURIReplacer, encodeURIComponent("https://expand.vn/verify-zoho")).replace(codeReplacer, code);
 
     const options = {
