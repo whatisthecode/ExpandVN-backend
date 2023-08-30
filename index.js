@@ -14,6 +14,9 @@ const endpoint = "https://graph.zalo.me/v2.0/me/info";
 const secretKey = process.env.ZALO_APP_SECRET_KEY || "";
 const appId = process.env.ZALO_APP_ID || "";
 
+const zohoClientId = process.env.ZOHO_CLIENT_ID || "";
+const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET || "";
+
 const app = express();
 const AWS = require("aws-sdk");
 const { init } = require('./storage');
@@ -518,6 +521,26 @@ app.post("/set-zalo-oa-access-token", async (req, res) => {
 
     res.status(200).send("OK");
 })
+
+app.get("/get-zoho-code-link", (req, res) => {
+    const {
+        scope,
+        redirect_uri,
+    } = req.query;
+
+    if(!scope) return res.status(400).send("Missing scope");
+    if(!redirect_uri) return res.status(400).send("Missing redirect_uri");
+
+    const clientIdReplacer = "<$clientId>";
+    const scopeReplacer = "<$scope>";
+    const redirectURIReplacer = "<$redirectURI>";
+
+    const baseURL = `https://accounts.zoho.com/oauth/v2/auth?response_type=code&client_id=${clientIdReplacer}&scope=${scopeReplacer}&redirect_uri=${redirectURIReplacer}&access_type=offline`;
+
+    const resultURL = baseURL.replace(clientIdReplacer, zohoClientId).replace(scopeReplacer, scope).replace(redirectURIReplacer, redirect_uri);
+
+    res.status(200).send(resultURL);
+});
 
 app.get("/app-info", async (req, res) => {
 
