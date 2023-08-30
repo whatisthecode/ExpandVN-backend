@@ -535,7 +535,7 @@ app.get("/get-zoho-code-link", (req, res) => {
     const scopeReplacer = "<$scope>";
     const redirectURIReplacer = "<$redirectURI>";
 
-    const baseURL = `https://accounts.zoho.com/oauth/v2/auth?response_type=code&client_id=${clientIdReplacer}&scope=${scopeReplacer}&redirect_uri=${redirectURIReplacer}&access_type=offline`;
+    const baseURL = `https://accounts.zoho.com/oauth/v2/auth?response_type=code&client_id=${clientIdReplacer}&scope=${scopeReplacer}&redirect_uri=${redirectURIReplacer}&access_type=offline&prompt=consent`;
 
     const resultURL = baseURL.replace(clientIdReplacer, zohoClientId).replace(scopeReplacer, scope).replace(redirectURIReplacer, redirect_uri);
 
@@ -554,7 +554,7 @@ app.get("/verify-zoho", async (req, res) => {
     const redirectURIReplacer = "<$redirectURI>";
     const codeReplacer = "<$code>";
 
-    const baseEndpoint = `https://accounts.zoho.com/oauth/v2/token?grant_type=authorization_code&client_id=${clientIdReplacer}&client_secret=${clientSecretReplacer}&redirect_uri=${redirectURIReplacer}&code=${codeReplacer}&prompt=consent`;
+    const baseEndpoint = `https://accounts.zoho.com/oauth/v2/token?grant_type=authorization_code&client_id=${clientIdReplacer}&client_secret=${clientSecretReplacer}&redirect_uri=${redirectURIReplacer}&code=${codeReplacer}`;
     const endpoint = baseEndpoint.replace(clientIdReplacer, zohoClientId).replace(clientSecretReplacer, zohoClientSecret).replace(redirectURIReplacer, encodeURIComponent("https://expand.vn/verify-zoho")).replace(codeReplacer, code);
 
     const options = {
