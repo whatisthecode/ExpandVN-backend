@@ -1253,7 +1253,8 @@ async function createOrder(req, res) {
         },
         body: {
             data: body
-        }
+        },
+        json: true
     }, async (error, response, body) => {
 
         console.log(error);
