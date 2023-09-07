@@ -466,6 +466,34 @@ app.post("/send-order-notification", async (req, res) => {
     sendNotification(req, res);
 });
 
+app.post("/request-notification", async(req, res) => {
+    if(!req.body.userId) return res.status(200).json({
+        code: 400,
+        message: "Missing user id"
+    });
+
+    const userId = req.body.userId;
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('users').doc(userId);
+    if(!docRef || !docRef.id) return res.status(200).json({
+        code: 400,
+        message: "User not found"
+    })
+
+
+    await docRef.set({
+        allowedNotification: true
+    }, {
+        merge: true
+    });
+
+    res.status(200).json({
+        code: 200,
+        success: true
+    })
+});
+
 function fileExists(filePath) {
     return new Promise((resolve) => {
         fs.access(filePath, (err) => {
@@ -679,6 +707,61 @@ async function refreshZaloOAToken() {
                     await docRef.set({
                         oaAccessToken: result.access_token,
                         oaRefreshToken: result.refresh_token
+                    }, {merge:true})
+                    resolve(result);
+                }
+                else reject({
+                    code: response.statusCode,
+                    ...JSON.parse(body)
+                })
+            }
+        })
+    })
+}
+
+async function refreshZohoToken() {
+    // const credentialPath = path.join(__dirname, "zalo-credentials.json");
+    // const isExists = await fileExists(credentialPath);
+    // if(!isExists) return Promise.reject({
+    // code: 500,
+    // message: "Missing zalo credential. Please set up first"
+    // });
+
+    // const zaloCredentials = require(credentialPath) || {};
+    // if(!zaloCredentials.accessToken) return Promise.reject({
+    // code: 500,
+    // message: "Missing zalo oa access token. Please set up first"
+    // });
+
+    // if(!zaloCredentials.appId) return Promise.reject({
+    //     code: 500,
+    //     message: "Missing zalo app id. Please set up first"
+    // });
+
+    // if(!zaloCredentials.refreshToken) return Promise.reject({
+    //     code: 500,
+    //     message: "Missing zalo oa refresh token. Please set up first"
+    // });
+
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("tokens");
+
+    const snapshot = await docRef.get();
+
+    const { zohoRefreshToken } = snapshot.data();
+
+    const endpoint = `https://accounts.zoho.com/oauth/v2/token?refresh_token=${zohoRefreshToken}&client_id=${zohoClientId}&client_secret=${zohoClientSecret}&grant_type=refresh_token`;
+    return new Promise((resolve, reject) => {
+        request.post({
+            url: endpoint
+        }, async (error, response, body) => {
+            if (error) reject(error);
+            else {
+                if (response.statusCode === 200) {
+                    const result = JSON.parse(body);
+                    await docRef.set({
+                        zohoAccessToken: result.access_token
                     }, {merge:true})
                     resolve(result);
                 }
@@ -1148,6 +1231,55 @@ app.get("/api/user/:id", async (req, res) => {
         })
     } 
 });
+
+async function createOrder(req, res) {
+    const body = req.body;
+
+    const endpoint =  "https://creator.zoho.com/api/v2/khoanguyen9/pos-expand/form/Test_API";
+
+    const firestoreDB = await init(s3);
+
+    const docRef = firestoreDB.collection('configs').doc("tokens");
+
+    const snapshot = await docRef.get();
+
+    const { zohoAccessToken } = snapshot.data();
+
+    request.post({
+        url: endpoint,
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Zoho-oauthtoken ${zohoAccessToken}`
+        },
+        body: {
+            data: body
+        }
+    }, async (error, response, body) => {
+        if (error) reject(error);
+        else {
+            if (response.statusCode === 200) {
+                const result = JSON.parse(body);
+                res.send(200).json(result)
+            }
+            else if(response.statusCode === 401) {
+                const result = JSON.parse(body);
+                if(result.code === 1030) {
+                    await refreshZohoToken();
+                    createOrder(req, res);
+                }
+                else res.send(401).json(result);
+            }
+            else res.jsend(500).json({
+                code: response.statusCode,
+                ...JSON.parse(body)
+            })
+        }
+    })
+}
+
+app.post("/api/create-order", async (req, res) => {
+    createOrder(req, res);
+})
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
