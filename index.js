@@ -1255,11 +1255,11 @@ async function createOrder(req, res) {
             data: body
         }
     }, async (error, response, body) => {
-        if (error) reject(error);
+        if (error) res.status(500).json(error);
         else {
             if (response.statusCode === 200) {
                 const result = JSON.parse(body);
-                res.send(200).json(result)
+                res.status(200).json(result)
             }
             else if(response.statusCode === 401) {
                 const result = JSON.parse(body);
@@ -1267,9 +1267,9 @@ async function createOrder(req, res) {
                     await refreshZohoToken();
                     createOrder(req, res);
                 }
-                else res.send(401).json(result);
+                else res.status(401).json(result);
             }
-            else res.jsend(500).json({
+            else res.status(500).json({
                 code: response.statusCode,
                 ...JSON.parse(body)
             })
