@@ -1256,11 +1256,7 @@ async function createOrder(req, res) {
         },
         json: true
     }, async (error, response, body) => {
-
-        console.log(error);
-        console.log(response);
         console.log(body);
-
         if (error) res.status(500).json(error);
         else {
             if (response.statusCode === 200) {
