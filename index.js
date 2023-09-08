@@ -1234,8 +1234,9 @@ app.get("/api/user/:id", async (req, res) => {
 
 async function createOrder(req, res) {
     const body = req.body;
+    const isDev = (req.headers["X-Environment"] || req.headers["x-environment"]) === "development"; 
 
-    const endpoint =  "https://creator.zoho.com/api/v2/khoanguyen9/pos-expand/form/Test_API";
+    const endpoint =  isDev ? "https://creatorapp.zoho.com/khoanguyen9/pos-expand-sandbox/#Form:Test_API" : "https://creator.zoho.com/api/v2/khoanguyen9/pos-expand/form/Test_API";
 
     const firestoreDB = await init(s3);
 
