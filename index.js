@@ -1250,7 +1250,8 @@ async function createOrder(req, res) {
         url: endpoint,
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Zoho-oauthtoken ${zohoAccessToken}`
+            "Authorization": `Zoho-oauthtoken ${zohoAccessToken}`,
+            ...(isDev ? {"environment": "development"} : {}}
         },
         body: {
             data: body
