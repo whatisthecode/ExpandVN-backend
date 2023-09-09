@@ -1380,6 +1380,7 @@ async function createOrder(req, res) {
                 const result = typeof body === "string" ? JSON.parse(body) : body;
                 if (result.code === 1030) {
                     await refreshZohoToken();
+                    req.body.timestamp = timestamp;
                     createOrder(req, res);
                 }
                 else res.status(401).json(result);
