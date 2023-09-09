@@ -1312,7 +1312,10 @@ async function createOrder(req, res) {
     const timestamp = body.timestamp;
     delete body.timestamp;
 
-    body.Order_ID = await generateOrderId(timestamp);
+    const requestBody = {
+        ...body
+    }
+    requestBody.Order_ID = await generateOrderId(timestamp);
 
     const isDev = (req.headers["X-Environment"] || req.headers["x-environment"]) === "development";
 
@@ -1334,7 +1337,7 @@ async function createOrder(req, res) {
             //...(isDev ? {"environment": "development"} : {})
         },
         body: {
-            data: body
+            data: requestBody
         },
         json: true
     }, async (error, response, body) => {
@@ -1345,7 +1348,7 @@ async function createOrder(req, res) {
                 const data = result.data;
                 const dataResult = {};
                 if(data.ID) dataResult.zohoOrderId = result.data.ID;
-                dataResult.orderId = body.Order_ID;
+                dataResult.orderId = requestBody.Order_ID;
 
                 res.status(200).json({
                     code: 200,
