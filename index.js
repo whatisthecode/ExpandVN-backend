@@ -1258,7 +1258,7 @@ async function generateOrderId(timestamp) {
     const dateString = getFullDateString(date.getDate());
     const monthString = getFullDateString(date.getMonth() + 1);
     const yearString = date.getFullYear();
-    const orderId = `EXPD${dateString}${monthString}${yearString}`;
+    let orderId = `EXPD${dateString}${monthString}${yearString}`;
 
     if (currentOrderCount < 0) {
         currentOrderCount = 1;
