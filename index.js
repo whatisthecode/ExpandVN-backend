@@ -1264,7 +1264,9 @@ async function generateOrderId(timestamp) {
         currentOrderCount = 1;
         const firestoreDB = await init(s3);
         const docRef = firestoreDB.collection('configs').doc("order");
-        if (!docRef || !docRef.id) {
+        const doc = await docRef.get();
+
+        if (!doc.exists) {
             await docRef.set({
                 currentTimestamp: (+new Date(date.getFullYear(), date.getMonth(), date.getDate())),
                 count: currentOrderCount
@@ -1273,7 +1275,7 @@ async function generateOrderId(timestamp) {
             });
         }
         else {
-            const doc = await docRef.get();
+            
             const data = doc.data();
             currentOrderCount += 1;
             const { currentTimestamp } = data;
