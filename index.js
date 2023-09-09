@@ -1310,7 +1310,7 @@ async function createOrder(req, res) {
     const timestamp = body.timestamp;
     delete body.timestamp;
 
-    body.Order_ID = generateOrderId(timestamp);
+    body.Order_ID = await generateOrderId(timestamp);
 
     const isDev = (req.headers["X-Environment"] || req.headers["x-environment"]) === "development";
 
