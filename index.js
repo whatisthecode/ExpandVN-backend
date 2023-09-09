@@ -26,8 +26,8 @@ const bucket = process.env.CYCLIC_BUCKET_NAME || "";
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ 
-    extended: true 
+app.use(bodyParser.urlencoded({
+    extended: true
 }));
 
 const CyclicDB = require('@cyclic.sh/dynamodb');
@@ -243,9 +243,9 @@ app.get("/generate-challenge-code", async (req, res) => {
     const challengeCode = _challengeCode.replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
 
     const firestoreDB = await init(s3);
-    
+
     const docRef = firestoreDB.collection('configs').doc("code");
-    
+
     try {
         await docRef.set({
             verifierCode,
@@ -300,7 +300,7 @@ app.get("/verify-app", async (req, res) => {
     const data = snapshot.data();
 
     const {
-        verifierCode 
+        verifierCode
     } = data;
 
     const queries = {
@@ -337,7 +337,7 @@ app.get("/verify-app", async (req, res) => {
                     });
                     res.status(200).json(oaToken);
                 }
-                catch(e){
+                catch (e) {
                     res.status(500).json({
                         code: 500,
                         message: e.message
@@ -373,13 +373,13 @@ async function sendNotification(req, res) {
         }).once("end", async () => {
             try {
                 const jsonData = JSON.parse(data);
-                if(jsonData.error === -216) {
+                if (jsonData.error === -216) {
                     await refreshZaloOAToken();
                     sendNotification(req, res);
                 }
                 else res.status(200).json(jsonData);
             }
-            catch(e) {
+            catch (e) {
                 res.status(200).json({
                     code: 500,
                     message: e.message,
@@ -466,8 +466,8 @@ app.post("/send-order-notification", async (req, res) => {
     sendNotification(req, res);
 });
 
-app.post("/request-notification", async(req, res) => {
-    if(!req.body.userId) return res.status(200).json({
+app.post("/request-notification", async (req, res) => {
+    if (!req.body.userId) return res.status(200).json({
         code: 400,
         message: "Missing user id"
     });
@@ -476,7 +476,7 @@ app.post("/request-notification", async(req, res) => {
     const firestoreDB = await init(s3);
 
     const docRef = firestoreDB.collection('users').doc(userId);
-    if(!docRef || !docRef.id) return res.status(200).json({
+    if (!docRef || !docRef.id) return res.status(200).json({
         code: 400,
         message: "User not found"
     })
@@ -556,8 +556,8 @@ app.get("/get-zoho-code-link", (req, res) => {
         redirect_uri,
     } = req.query;
 
-    if(!scope) return res.status(400).send("Missing scope");
-    if(!redirect_uri) return res.status(400).send("Missing redirect_uri");
+    if (!scope) return res.status(400).send("Missing scope");
+    if (!redirect_uri) return res.status(400).send("Missing redirect_uri");
 
     const clientIdReplacer = "<$clientId>";
     const scopeReplacer = "<$scope>";
@@ -575,7 +575,7 @@ app.get("/verify-zoho", async (req, res) => {
         code
     } = req.query;
 
-    if(!code) return res.status(400).send("Missing code");
+    if (!code) return res.status(400).send("Missing code");
 
     const clientIdReplacer = "<$clientId>";
     const clientSecretReplacer = "<$clientSecret>";
@@ -606,13 +606,13 @@ app.get("/verify-zoho", async (req, res) => {
                 try {
                     await docRef.set({
                         zohoAccessToken: zohoToken.access_token,
-                        ...zohoToken.refresh_token ? {zohoRefreshToken: zohoToken.refresh_token} : {},
+                        ...zohoToken.refresh_token ? { zohoRefreshToken: zohoToken.refresh_token } : {},
                     }, {
                         merge: true
                     });
                     res.status(200).json(zohoToken);
                 }
-                catch(e){
+                catch (e) {
                     res.status(500).json({
                         code: 500,
                         message: e.message
@@ -707,7 +707,7 @@ async function refreshZaloOAToken() {
                     await docRef.set({
                         oaAccessToken: result.access_token,
                         oaRefreshToken: result.refresh_token
-                    }, {merge:true})
+                    }, { merge: true })
                     resolve(result);
                 }
                 else reject({
@@ -762,7 +762,7 @@ async function refreshZohoToken() {
                     const result = JSON.parse(body);
                     await docRef.set({
                         zohoAccessToken: result.access_token
-                    }, {merge:true})
+                    }, { merge: true })
                     resolve(result);
                 }
                 else reject({
@@ -842,7 +842,7 @@ app.post("/add-data/:type", async (req, res) => {
 
     const _data = req.body.data;
 
-    if(typeof _data !== "object" || !_data) return res.status(400).json({
+    if (typeof _data !== "object" || !_data) return res.status(400).json({
         code: 400,
         message: "Data input must be an array object or an object"
     })
@@ -856,9 +856,9 @@ app.post("/add-data/:type", async (req, res) => {
 
     let isValid = false;
 
-    if(type === "seller") {
+    if (type === "seller") {
         isValid = true;
-        for(let i = 0; i < dataLength; i++) {
+        for (let i = 0; i < dataLength; i++) {
             const item = data[i];
             const docRef = firestoreDB.collection("sellers").doc(item.id);
             batch.set(docRef, {
@@ -868,9 +868,9 @@ app.post("/add-data/:type", async (req, res) => {
             });
         }
     }
-    else if(type === "food") {
+    else if (type === "food") {
         isValid = true;
-        for(let i = 0; i < dataLength; i++) {
+        for (let i = 0; i < dataLength; i++) {
             const item = data[i];
             const docRef = firestoreDB.collection("foods").doc(item.id);
             batch.set(docRef, {
@@ -880,9 +880,9 @@ app.post("/add-data/:type", async (req, res) => {
             });
         }
     }
-    else if(type === "banner") {
+    else if (type === "banner") {
         isValid = true;
-        for(let i = 0; i < dataLength; i++){
+        for (let i = 0; i < dataLength; i++) {
             const item = data[i];
             const docRef = firestoreDB.collection("banners").doc(item.id);
             batch.set(docRef, {
@@ -893,7 +893,7 @@ app.post("/add-data/:type", async (req, res) => {
         }
     }
 
-    if(!isValid) {
+    if (!isValid) {
         return res.status(200).json({
             code: 200,
             message: "Nothing happened"
@@ -907,7 +907,7 @@ app.post("/add-data/:type", async (req, res) => {
                 data: result
             })
         }
-        catch(e){
+        catch (e) {
             return res.status(500).json({
                 code: 500,
                 message: e.message
@@ -920,7 +920,7 @@ app.get("/api/clear-cache/:key", async (req, res) => {
     const cache = cylicDB.collection("cache");
     const key = req.params.key;
 
-    if(key === "all") {
+    if (key === "all") {
         const data = await cache.delete("api-seller-list");
         return res.status(200).json({
             code: 200,
@@ -945,41 +945,41 @@ app.get("/api/seller-list", async (_, res) => {
         const sellerListCache = await cache.get(cacheKey);
         let sellerList;
         let cacheStatus = "missing cache";
-        if(sellerListCache) {
-        
+        if (sellerListCache) {
+
             sellerList = sellerListCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
             const collectionRef = firestoreDB.collection("sellers");
             const foodRef = firestoreDB.collection("foods");
-    
+
 
             const docs = await collectionRef.get();
             sellerList = [];
 
             const sellerLength = docs.docs.length;
-        
-            for(let i = 0; i < sellerLength; i++){
+
+            for (let i = 0; i < sellerLength; i++) {
                 const seller = await docs.docs[i].data();
                 const queryHasFood = await foodRef.where("sellerSlug", "==", seller.slug).count().get();
                 const hasFood = queryHasFood.data().count > 0 ? true : false;
-                if(hasFood) sellerList.push(seller);
+                if (hasFood) sellerList.push(seller);
             }
 
             await cache.set(cacheKey, {
                 data: sellerList,
-                ttl: (Date.now() / 1000) + 300   
+                ttl: (Date.now() / 1000) + 300
             });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: sellerList
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
@@ -997,7 +997,7 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
         const sellerCache = await cache.get(cacheKey);
         let seller;
         let cacheStatus = "missing cache";
-        if(sellerCache) {
+        if (sellerCache) {
             seller = sellerCache.props.data;
             cacheStatus = "hit cache";
         }
@@ -1007,10 +1007,10 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
 
             const querySeller = await sellerRef.where("slug", "==", sellerSlug).get();
             const doc = querySeller.docs[0];
-            if(!doc) return res.status(200).json({
+            if (!doc) return res.status(200).json({
                 code: 404,
                 message: "Seller not found"
-            }) ;
+            });
 
             seller = doc.data();
 
@@ -1029,14 +1029,14 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
                 ttl: (Date.now() / 1000) + 300
             });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: seller
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
@@ -1054,13 +1054,13 @@ app.get("/api/food-list/:sellerSlug", async (req, res) => {
         const foodListCache = await cache.get(cacheKey);
         let foodList;
         let cacheStatus = "missing cache";
-        if(foodListCache) {
+        if (foodListCache) {
             foodList = foodListCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
             const collectionRef = firestoreDB.collection("foods");
-    
+
             const docs = await collectionRef.where("sellerSlug", "==", sellerSlug).get();
             foodList = [];
 
@@ -1069,18 +1069,18 @@ app.get("/api/food-list/:sellerSlug", async (req, res) => {
             });
 
             await cache.set(cacheKey, {
-                data:  foodList,
+                data: foodList,
                 ttl: (Date.now() / 1000) + 300
             });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: foodList
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
@@ -1098,16 +1098,16 @@ app.get("/api/food/:slug", async (req, res) => {
         const foodCache = await cache.get(cacheKey);
         let food;
         let cacheStatus = "missing cache";
-        if(foodCache) {
+        if (foodCache) {
             food = foodCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
             const collectionRef = firestoreDB.collection("foods");
-    
+
             const docs = await collectionRef.where("slug", "==", slug).get();
             const doc = docs.docs[0];
-            if(!doc) return res.status(200).json({
+            if (!doc) return res.status(200).json({
                 code: 404,
                 message: "Food not found"
             });
@@ -1115,18 +1115,18 @@ app.get("/api/food/:slug", async (req, res) => {
             food = doc.data();
 
             await cache.set(cacheKey, {
-                data:  food,
+                data: food,
                 ttl: (Date.now() / 1000) + 300
             });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: food
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
@@ -1143,17 +1143,17 @@ app.get("/api/banner", async (req, res) => {
         const bannerCache = await cache.get(cacheKey);
         let banner;
         let cacheStatus = "missing cache";
-        if(bannerCache) {
+        if (bannerCache) {
             banner = bannerCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
             const collectionRef = firestoreDB.collection("banners");
-    
+
             const docs = await collectionRef.where("active", "==", true).get();
             // banner = [];
             const doc = docs.docs[0];
-            if(!doc) return res.status(200).json({
+            if (!doc) return res.status(200).json({
                 code: 200,
                 data: null
             })
@@ -1168,19 +1168,19 @@ app.get("/api/banner", async (req, res) => {
             //     ttl: (Date.now() / 1000) + 300   
             // });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: banner
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
         })
-    } 
+    }
 });
 
 app.get("/api/user/:id", async (req, res) => {
@@ -1194,18 +1194,18 @@ app.get("/api/user/:id", async (req, res) => {
         const userCache = await cache.get(cacheKey);
         let user;
         let cacheStatus = "missing cache";
-        if(userCache) {
+        if (userCache) {
             user = userCache.props.data;
             cacheStatus = "hit cache";
         }
         else {
             const collectionRef = firestoreDB.collection("users");
-    
+
             const doc = collectionRef.doc(userId);
             // banner = [];
             const userData = await doc.get();
 
-            if(!userData) return res.status(200).json({
+            if (!userData) return res.status(200).json({
                 code: 404,
                 message: "User not found"
             })
@@ -1214,29 +1214,107 @@ app.get("/api/user/:id", async (req, res) => {
 
             await cache.set(cacheKey, {
                 data: user,
-                ttl: (Date.now() / 1000) + 300   
+                ttl: (Date.now() / 1000) + 300
             });
         }
-    
+
         res.setHeader("X-Data-Cache", cacheStatus);
         res.status(200).json({
             code: 200,
             data: user
         })
     }
-    catch(e){
+    catch (e) {
         res.status(200).json({
             code: 500,
             messge: e.message
         })
-    } 
+    }
 });
+
+function getFullDateString(dateNumber) {
+    if (dateNumber < 10) return `0${dateNumber}`;
+    return dateNumber.toString();
+}
+
+let currentOrderCount = -1;
+
+function getFullOrderIdString(orderNo) {
+    let prefix = "";
+    if (orderNo < 10) prefix = "000";
+    else if (orderNo < 100) prefix = "00";
+    else prefix = "000";
+
+    return `${prefix}${orderNo}`;
+}
+
+function isTimestampDiff(timestamp1, timestamp2) {
+    if (timestamp2 - timestamp1 >= (1000 * 60 * 60 * 24)) return true;
+    return false;
+}
+
+async function generateOrderId(timestamp) {
+    const date = new Date(timestamp);
+    const dateString = getFullDateString(date.getDate());
+    const monthString = getFullDateString(date.getMonth() + 1);
+    const yearString = date.getFullYear();
+    const orderId = `EXPD${dateString}${monthString}${yearString}`;
+
+    if (currentOrderCount < 0) {
+        currentOrderCount = 1;
+        const firestoreDB = await init(s3);
+        const docRef = firestoreDB.collection('configs').doc("order");
+        if (!docRef || !docRef.id) {
+            await docRef.set({
+                currentTimestamp: (+new Date(date.getFullYear(), date.getMonth(), date.getDate())),
+                count: currentOrderCount
+            }, {
+                merge: true
+            });
+        }
+        else {
+            const doc = await docRef.get();
+            const data = doc.data();
+            currentOrderCount += 1;
+            const { currentTimestamp } = data;
+            if (isTimestampDiff(currentTimestamp, timestamp)) {
+                await docRef.set({
+                    currentTimestamp: (+new Date(date.getFullYear(), date.getMonth(), date.getDate())),
+                    count: currentOrderCount
+                }, {
+                    merge: true
+                });
+            }
+            else {
+                await docRef.set({
+                    count: currentOrderCount
+                }, {
+                    merge: true
+                });
+            }
+        }
+    }
+
+    orderId += getFullOrderIdString(currentOrderCount);
+
+    return orderId;
+}
 
 async function createOrder(req, res) {
     const body = req.body;
-    const isDev = (req.headers["X-Environment"] || req.headers["x-environment"]) === "development"; 
+    if (!body.timestamp) return res.status(200).json({
+        code: 400,
+        message: "Missing timestamp"
+    })
 
-    const endpoint =  isDev ? "https://creatorapp.zoho.com/khoanguyen9/pos-expand-sandbox/#Form:Test_API" : "https://creator.zoho.com/api/v2/khoanguyen9/pos-expand/form/Test_API";
+    const timestamp = body.timestamp;
+    delete body.timestamp;
+
+    body.Order_ID = generateOrderId(timestamp);
+
+    const isDev = (req.headers["X-Environment"] || req.headers["x-environment"]) === "development";
+
+    const endpoint = isDev ? "https://creatorapp.zoho.com/khoanguyen9/pos-expand-sandbox/#Form:Test_API" : "https://creator.zoho.com/api/v2/khoanguyen9/pos-expand/form/Test_API";
 
     const firestoreDB = await init(s3);
 
@@ -1262,11 +1340,19 @@ async function createOrder(req, res) {
         else {
             if (response.statusCode === 200) {
                 const result = typeof body === "string" ? JSON.parse(body) : body;
-                res.status(200).json(result)
+                const data = result.data;
+                const dataResult = {};
+                if(data.ID) dataResult.zohoOrderId = result.data.ID;
+                dataResult.orderId = body.Order_ID;
+
+                res.status(200).json({
+                    code: 200,
+                    data: dataResult
+                });
             }
-            else if(response.statusCode === 401) {
+            else if (response.statusCode === 401) {
                 const result = typeof body === "string" ? JSON.parse(body) : body;
-                if(result.code === 1030) {
+                if (result.code === 1030) {
                     await refreshZohoToken();
                     createOrder(req, res);
                 }
