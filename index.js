@@ -1346,14 +1346,19 @@ async function createOrder(req, res) {
             if (response.statusCode === 200) {
                 const result = typeof body === "string" ? JSON.parse(body) : body;
                 const data = result.data;
-                const dataResult = {};
-                if(data.ID) dataResult.zohoOrderId = result.data.ID;
-                dataResult.orderId = requestBody.Order_ID;
-
-                res.status(200).json({
-                    code: 200,
-                    data: dataResult
-                });
+                if(data) {
+                    const dataResult = {};
+                    if(data.ID) dataResult.zohoOrderId = result.data.ID;
+                    dataResult.orderId = requestBody.Order_ID;
+    
+                    res.status(200).json({
+                        code: 200,
+                        data: dataResult
+                    });
+                }
+                else {
+                    res.status(200).json(result);
+                }
             }
             else if (response.statusCode === 401) {
                 const result = typeof body === "string" ? JSON.parse(body) : body;
