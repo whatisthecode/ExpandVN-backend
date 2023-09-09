@@ -1281,9 +1281,10 @@ async function generateOrderId(timestamp) {
         else {
             const data = doc.data();
             const {count} = data;
-            currentOrderCount = count + 1;
+            
             const { currentTimestamp } = data;
             if (isTimestampDiff(currentTimestamp, timestamp)) {
+                currentOrderCount = 1;
                 await docRef.set({
                     currentTimestamp: (+new Date(date.getFullYear(), date.getMonth(), date.getDate())),
                     count: currentOrderCount
@@ -1292,6 +1293,7 @@ async function generateOrderId(timestamp) {
                 });
             }
             else {
+                currentOrderCount = count + 1;
                 await docRef.set({
                     count: currentOrderCount
                 }, {
