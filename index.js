@@ -1275,9 +1275,9 @@ async function generateOrderId(timestamp) {
             });
         }
         else {
-            
             const data = doc.data();
-            currentOrderCount += 1;
+            const {count} = data;
+            currentOrderCount = count + 1;
             const { currentTimestamp } = data;
             if (isTimestampDiff(currentTimestamp, timestamp)) {
                 await docRef.set({
@@ -1295,6 +1295,16 @@ async function generateOrderId(timestamp) {
                 });
             }
         }
+    }
+    else {
+        currentOrderCount += 1;
+        const firestoreDB = await init(s3);
+        const docRef = firestoreDB.collection('configs').doc("order");
+        await docRef.set({
+            count: currentOrderCount
+        }, {
+            merge: true
+        });
     }
 
     orderId += getFullOrderIdString(currentOrderCount);
