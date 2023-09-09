@@ -488,10 +488,14 @@ app.post("/request-notification", async (req, res) => {
         merge: true
     });
 
+    const cache = cylicDB.collection("cache");
+    const cacheKey = "api-user-" + userId;
+    await cache.delete(cacheKey);
+
     res.status(200).json({
         code: 200,
         success: true
-    })
+    });
 });
 
 function fileExists(filePath) {
