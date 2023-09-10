@@ -17,6 +17,12 @@ const appId = process.env.ZALO_APP_ID || "";
 const zohoClientId = process.env.ZOHO_CLIENT_ID || "";
 const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET || "";
 
+const dataCacheTime = (() => {
+    const dataCacheTimeString = process.env.DATA_CACHE_TIME;
+    if(dataCacheTimeString && !isNaN(Number(dataCacheTimeString))) return Number(dataCacheTimeString);
+    else return 300;
+})();
+
 const app = express();
 const AWS = require("aws-sdk");
 const { init } = require('./storage');
@@ -932,6 +938,61 @@ app.post("/add-data/:type", async (req, res) => {
     }
 });
 
+app.get("/get-source/:id", async (req, res) => {
+    if(!req.params.id) return res.status(200).json({
+        code: 400,
+        message: "Missing source id"
+    });
+
+    const sourceId = req.params.id;
+
+    const firestoreDB = await init(s3);
+
+    const cache = cylicDB.collection("cache");
+    try {
+        const cacheKey = "api-source-" + sourceId;
+        const sourceCache = await cache.get(cacheKey);
+        let source;
+        let cacheStatus = "missing cache";
+        if (sourceCache) {
+
+            source = sourceCache.props.data;
+            cacheStatus = "hit cache";
+        }
+        else {
+            const collectionRef = firestoreDB.collection("sources");
+
+            const doc = collectionRef.doc(sourceId);
+
+            const data = await doc.get();
+
+            if(!data.exists) return res.status(200).json({
+                code: 404,
+                message: "source not found"
+            })
+
+            source = data.data();
+
+            await cache.set(cacheKey, {
+                data: source,
+                ttl: (Date.now() / 1000) + dataCacheTime
+            });
+        }
+
+        res.setHeader("X-Data-Cache", cacheStatus);
+        res.status(200).json({
+            code: 200,
+            data: source
+        })
+    }
+    catch (e) {
+        res.status(200).json({
+            code: 500,
+            messge: e.message
+        })
+    }
+});
+
 app.get("/api/clear-cache/:key", async (req, res) => {
     const cache = cylicDB.collection("cache");
     const key = req.params.key;
@@ -985,7 +1046,7 @@ app.get("/api/seller-list", async (_, res) => {
 
             await cache.set(cacheKey, {
                 data: sellerList,
-                ttl: (Date.now() / 1000) + 300
+                ttl: (Date.now() / 1000) + dataCacheTime
             });
         }
 
@@ -1042,7 +1103,7 @@ app.get("/api/seller/:sellerSlug", async (req, res) => {
 
             await cache.set(cacheKey, {
                 data: seller,
-                ttl: (Date.now() / 1000) + 300
+                ttl: (Date.now() / 1000) + dataCacheTime
             });
         }
 
@@ -1086,7 +1147,7 @@ app.get("/api/food-list/:sellerSlug", async (req, res) => {
 
             await cache.set(cacheKey, {
                 data: foodList,
-                ttl: (Date.now() / 1000) + 300
+                ttl: (Date.now() / 1000) + dataCacheTime
             });
         }
 
@@ -1132,7 +1193,7 @@ app.get("/api/food/:slug", async (req, res) => {
 
             await cache.set(cacheKey, {
                 data: food,
-                ttl: (Date.now() / 1000) + 300
+                ttl: (Date.now() / 1000) + dataCacheTime
             });
         }
 
@@ -1181,7 +1242,7 @@ app.get("/api/banner", async (req, res) => {
 
             // await cache.set(cacheKey, {
             //     data: banner,
-            //     ttl: (Date.now() / 1000) + 300   
+            //     ttl: (Date.now() / 1000) + dataCacheTime   
             // });
         }
 
@@ -1230,7 +1291,7 @@ app.get("/api/user/:id", async (req, res) => {
 
             await cache.set(cacheKey, {
                 data: user,
-                ttl: (Date.now() / 1000) + 300
+                ttl: (Date.now() / 1000) + dataCacheTime
             });
         }
 
