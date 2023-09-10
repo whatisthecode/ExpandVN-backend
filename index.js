@@ -896,6 +896,18 @@ app.post("/add-data/:type", async (req, res) => {
             })
         }
     }
+    else if (type === "source") {
+        isValid = true;
+        for (let i = 0; i < dataLength; i++) {
+            const item = data[i];
+            const docRef = firestoreDB.collection("sources").doc(item.id);
+            batch.set(docRef, {
+                ...item
+            }, {
+                merge: true
+            })
+        }
+    }
 
     if (!isValid) {
         return res.status(200).json({
