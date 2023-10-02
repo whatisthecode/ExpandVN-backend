@@ -17,9 +17,9 @@ const zohoClientId = process.env.ZOHO_CLIENT_ID || "";
 const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET || "";
 
 const phoneCryptoKey = Buffer.from(process.env.PHONE_CRYPTO_KEY || "phoneykeykeykeykeykeykey");
-const phoneCryptoIV = Buffer.from(process.env.PHONE_CRYPTO_KEY || "ce8fa8e98c51ecb99e9bf354", "hex");
+const phoneCryptoIV = Buffer.from(process.env.PHONE_CRYPTO_IV || "ce8fa8e98c51ecb99e9bf354", "hex");
 const locationCryptoKey = Buffer.from(process.env.LOCATION_CRYPTO_KEY || "locationykeykeykeykeykey");
-const locationCryptoIV = Buffer.from(process.env.LOCATION_CRYPTO_KEY || "ce8fa8e98c51ecb99e9bf354", "hex");
+const locationCryptoIV = Buffer.from(process.env.LOCATION_CRYPTO_IV || "ce8fa8e98c51ecb99e9bf354", "hex");
 // 892d22d9a2ed880b6be5bd90
 function encrypt(input, key, iv){
     const cipher = crypto.createCipheriv("aes-192-ccm", key, iv, {
