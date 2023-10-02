@@ -3,9 +3,8 @@ const request = require("request");
 const bodyParser = require("body-parser");
 const cors = require('cors')
 const { createHash, randomBytes } = require("crypto");
-const base64url = require("base64url");
-const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 const https = require("https");
 
@@ -16,6 +15,36 @@ const appId = process.env.ZALO_APP_ID || "";
 
 const zohoClientId = process.env.ZOHO_CLIENT_ID || "";
 const zohoClientSecret = process.env.ZOHO_CLIENT_SECRET || "";
+
+const phoneCryptoKey = Buffer.from(process.env.PHONE_CRYPTO_KEY || "phoneykeykeykeykeykeykey");
+const phoneCryptoIV = Buffer.from(process.env.PHONE_CRYPTO_KEY || "ce8fa8e98c51ecb99e9bf354", "hex");
+const locationCryptoKey = Buffer.from(process.env.LOCATION_CRYPTO_KEY || "locationykeykeykeykeykey");
+const locationCryptoIV = Buffer.from(process.env.LOCATION_CRYPTO_KEY || "ce8fa8e98c51ecb99e9bf354", "hex");
+// 892d22d9a2ed880b6be5bd90
+function encrypt(input, key, iv){
+    const cipher = crypto.createCipheriv("aes-192-ccm", key, iv, {
+        authTagLength: 16
+    });
+    const _encrypted = cipher.update(input);
+    const encrypted = Buffer.concat([_encrypted, cipher.final()]);
+
+    return encrypted.toString("hex") + "__" + cipher.getAuthTag().toString("hex");
+}
+
+function decrypt(input, key, iv) {
+    const segment = input.split("__");
+    if(segment.length !== 2) return "";
+
+    const encrypted = Buffer.from(segment[0], 'hex');
+    const decipher = crypto.createDecipheriv("aes-192-ccm", key, iv, {
+        authTagLength: 16
+    });
+    decipher.setAuthTag(Buffer.from(segment[1], "hex"));
+    const _decrypted = decipher.update(encrypted);
+    const decrypted = Buffer.concat([_decrypted, decipher.final()]);
+    
+    return decrypted.toString();
+}
 
 const dataCacheTime = (() => {
     const dataCacheTimeString = process.env.DATA_CACHE_TIME;
@@ -95,7 +124,7 @@ app.get('/user-phone', async (req, res) => {
                 const data = JSON.parse(body);
                 await docRef.set({
                     userId,
-                    phoneNumber: !data.error ? data.data.number : ""
+                    phoneNumber: !data.error ? encrypt(data.data.number, phoneCryptoKey, phoneCryptoIV) : ""
                 }, {
                     merge: true
                 })
@@ -204,7 +233,7 @@ app.get('/user-location', async (req, res) => {
                             });
                             await docRef.set({
                                 userId,
-                                location: !dataa.error ? (location.premise || location.street_address) : ""
+                                location: !dataa.error ? encrypt(location.premise || location.street_address, locationCryptoKey, locationCryptoIV) : ""
                             }, {
                                 merge: true
                             })
@@ -1288,6 +1317,8 @@ app.get("/api/user/:id", async (req, res) => {
             })
 
             user = userData.data();
+            if(user.phoneNumber) user.phoneNumber = decrypt(user.phoneNumber, phoneCryptoKey, phoneCryptoIV);
+            if(user.location) user.location = decrypt(user.location, locationCryptoKey, locationCryptoIV);
 
             await cache.set(cacheKey, {
                 data: user,
